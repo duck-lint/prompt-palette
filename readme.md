@@ -1,5 +1,3 @@
-### Draft
-
 # Prompt Command Palette (AutoHotkey)
 
 A small AutoHotkey tool that provides a **command palette for structured prompt templates**.
