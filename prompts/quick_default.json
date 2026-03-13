@@ -28,6 +28,7 @@
   "output_format": {
     "format": "conversational",
     "tone": "direct, serious, engaged",
-    "length": "null"
-  }
+    "length": "{{null_or_length}}"
+  },
+  "message": "{{message}}"
 }

@@ -1,9 +1,10 @@
 {
-  "objective": "Design, review, debug, or improve code or system architecture.",
+  "objective": "{{objective}}",
   "task_type": "coding",
   "context": {
-    "background": "Repo, script, pipeline, schema, or system context.",
-    "why_this_matters": "Optional. What this change is meant to improve.",
+    "attachment": "{{attachment_t_f}}",
+    "background": "{{background}}",
+    "why_this_matters": "{{why_this_matters}}",
     "source_material": [
       "current message",
       "relevant prior conversation",
@@ -12,7 +13,9 @@
     "frameworks_to_use": [
       "traceability",
       "dynamic coherence",
-      "epistemic hygiene"
+      "epistemic hygiene",
+      "robustness",
+      "anti drift"
     ]
   },
   "definitions": {
@@ -34,7 +37,8 @@
       "explicit naming",
       "maintainability",
       "traceability",
-      "small, testable changes"
+      "small, testable changes",
+      "robustness to edge cases and distribution shift"
     ],
     "do_not": [
       "invent unsupported behavior",
@@ -77,6 +81,11 @@
       "tests to add",
       "edge cases",
       "migration notes"
-    ]
-  }
+    ],
+    "codex_instructions": {
+      "required": "{{is_a_codex_json_required}}",
+      "language": "JSON"
+    }
+  },
+  "message": "{{message}}"
 }
