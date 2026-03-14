@@ -1,6 +1,6 @@
 # Prompt Command Palette (AutoHotkey)
 
-A small AutoHotkey tool that provides a **command palette for structured prompt templates**.
+![A small AutoHotkey tool that provides a **command palette for structured prompt templates**.](<Screenshot 2026-03-14 082418.png>)
 
 Press a hotkey, type to filter, select a template, fill in a few fields, and the script pastes a fully-formed JSON prompt into whatever text field you are currently using.
 
