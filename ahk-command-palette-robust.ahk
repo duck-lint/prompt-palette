@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
-global PromptDir := "C:\Users\madis\Projects\3. QoL Automation\prompt-command-palette\prompts"
+global PromptDir := A_ScriptDir "\prompts"
 global PromptFiles := []
 global PromptDisplayNames := []
 global FilteredNames := []
@@ -11,15 +11,18 @@ global PaletteHwnd := 0
 global SearchEdit := 0
 global TemplateList := 0
 
-; GitHub-dark-ish palette (approximate, not a literal Primer port)
-global GH_BG := "B6BFB8"         ; window background
-global GH_PANEL := "E4EBE6"      ; elevated surface
-global GH_INPUT := "E4EBE6"      ; input field background
-global GH_BUTTON := "FE4C25"     ; neutral button
-global GH_BORDER := "160048"     ; borders / separators
-global GH_TEXT := "0A241B"       ; main text
-global GH_MUTED := "0A241B"      ; secondary text
-global GH_SUCCESS := "0FBF3E"    ; primary action
+; Custom palette — light background, dark text, accent buttons.
+; NOTE: Despite the DWM dark-mode chrome applied in ApplyGitHubWindowChrome(),
+; the client-area colors below are a light theme. The dark-mode flag only
+; affects the title-bar icons and window frame, not the client area.
+global GH_BG := "B6BFB8"         ; window background (light sage)
+global GH_PANEL := "E4EBE6"      ; elevated surface / listbox background
+global GH_INPUT := "E4EBE6"      ; input field background (matches panel)
+global GH_BUTTON := "FE4C25"     ; cancel / neutral button (orange-red)
+global GH_BORDER := "160048"     ; DWM border color (dark indigo)
+global GH_TEXT := "0A241B"       ; primary text (near-black green)
+global GH_MUTED := "4A6B5D"      ; secondary / hint text (medium sage)
+global GH_SUCCESS := "0FBF3E"    ; primary action button (bright green)
 
 ; Register a message-level key handler once.
 ; This is more reliable than context hotkeys for Edit controls inside a GUI.
@@ -61,12 +64,16 @@ ShowPromptPalette() {
     PaletteGui.AddText("xm y+4", "Search JSON templates and press Enter to paste.")
 
     ; Search field
+    ; NOTE: Background and text color (c) work on Edit controls, but the
+    ; control border/frame is drawn by Windows and cannot be styled via AHK.
     PaletteGui.SetFont("s10 w400 c" GH_TEXT, "Segoe UI")
     SearchEdit := PaletteGui.AddEdit(
         "xm y+10 w330 h32 vSearchBox Background" GH_INPUT " c" GH_TEXT
     )
 
     ; Results
+    ; NOTE: ListBox background and text color are authoritative, but the
+    ; control border and scrollbar remain native Windows styled.
     TemplateList := PaletteGui.AddListBox(
         "xm y+10 w330 r11 vTemplateList AltSubmit Background" GH_PANEL " c" GH_TEXT
     )
@@ -80,7 +87,8 @@ ShowPromptPalette() {
     PaletteGui.SetFont("s9 w400 c" GH_MUTED, "Segoe UI")
     PaletteGui.AddText("xm y+10", "↑ ↓ move   Enter select   Esc cancel")
 
-    ; Action row
+    ; Action row — uses Text controls as fake buttons.
+    ; Background and text color are fully authoritative on static Text controls.
     PaletteGui.SetFont("s9 w600", "Segoe UI")
     SelectBtn := PaletteGui.AddText(
         "xm y+10 w112 h30 Center +0x200 Background" GH_SUCCESS " cFFFFFF",
@@ -290,7 +298,7 @@ PasteText(text) {
     }
 
     Send("^v")
-    Sleep(100)
+    Sleep(300)  ; allow target app to read clipboard before restoring
     A_Clipboard := originalClipboard
 }
 
@@ -331,7 +339,19 @@ HandlePaletteKeyDown(wParam, lParam, msg, hwnd) {
 ApplyGitHubWindowChrome(hwnd) {
     global GH_BG, GH_BORDER, GH_TEXT
 
-    ; Win11-only polish. Safe to no-op on unsupported builds.
+    ; Win11-only polish (build 22000+). Silently no-ops on older Windows.
+    ;
+    ; What these actually control:
+    ;   IMMERSIVE_DARK_MODE  → title-bar icon color & close/min/max glyphs
+    ;   WINDOW_CORNER_PREF   → rounded vs square frame corners
+    ;   BORDER_COLOR         → 1px window-frame border
+    ;   CAPTION_COLOR        → title-bar fill behind the caption text
+    ;   TEXT_COLOR            → title-bar caption text
+    ;   SYSTEMBACKDROP_TYPE  → Mica/Acrylic backdrop (only visible when
+    ;                          the window has transparency; opaque BackColor
+    ;                          fully occludes it, so this is cosmetic-only here)
+    ;
+    ; None of these affect the client area, Edit, or ListBox controls.
     static DWMWA_USE_IMMERSIVE_DARK_MODE := 20
     static DWMWA_WINDOW_CORNER_PREFERENCE := 33
     static DWMWA_BORDER_COLOR := 34

@@ -111,17 +111,18 @@ When the template is selected, the script prompts the user to fill these fields.
 ## Folder structure
 
 ```
-prompt-command-palette/
+prompt-palette/
 │
 ├─ ahk-command-palette-robust.ahk
 │
 ├─ prompts/
 │   ├─ quick_default.json
-│   ├─ philosophy_analysis.json
-│   ├─ code_architecture.json
-│   └─ drafting.json
+│   ├─ code.json
+│   ├─ writing_drafts.json
+│   ├─ discussion_default.json
+│   └─ philosophy.json
 │
-└─ README.md
+└─ readme.md
 ```
 
 All templates live in the `prompts/` directory.
