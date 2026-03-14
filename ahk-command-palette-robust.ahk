@@ -342,11 +342,11 @@ HandlePaletteKeyDown(wParam, lParam, msg, hwnd) {
 }
 
 ShowThemedInputDialog(prompt, title := "Input") {
-    global GH_BG, GH_PANEL, GH_INPUT, GH_TEXT, GH_MUTED, GH_BUTTON, GH_SUCCESS, GH_BORDER
+    global GH_BG, GH_INPUT, GH_TEXT, GH_BUTTON, GH_SUCCESS
 
     dialogResult := {Result: "Cancel", Value: ""}
 
-    dlg := Gui("+AlwaysOnTop -MaximizeBox -MinimizeBox +Owner", title)
+    dlg := Gui("+AlwaysOnTop -MaximizeBox -MinimizeBox", title)
     dlg.BackColor := GH_BG
     dlg.MarginX := 16
     dlg.MarginY := 14
@@ -381,8 +381,9 @@ ShowThemedInputDialog(prompt, title := "Input") {
     ApplyGitHubWindowChrome(dlg.Hwnd)
     inputCtrl.Focus()
 
-    WinWaitClose(dlg)
-    OnMessage(0x100, _DialogKeyHandler, 0)  ; WM_KEYDOWN
+    WinWaitClose("ahk_id " dlg.Hwnd)
+    OnMessage(0x100, _DialogKeyHandler, 0)  ; remove dialog handler
+    OnMessage(0x100, HandlePaletteKeyDown)  ; ensure palette handler is restored
     return dialogResult
 
     _SubmitDialog() {
