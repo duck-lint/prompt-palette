@@ -292,16 +292,19 @@ PasteText(text) {
     originalClipboard := A_Clipboard
     A_Clipboard := text
 
-    if !ClipWait(1) {
-        MsgBox("Clipboard update failed.")
-        return
-    }
+    try {
+        if !ClipWait(1) {
+            MsgBox("Clipboard update failed.")
+            return
+        }
 
-    Send("^v")
-    Sleep(300)  ; heuristic: allow target app to read clipboard before restoring.
-               ; 300ms handles most apps; very slow targets (Electron, etc.) may
-               ; need more. A timer-based restore would be more robust.
-    A_Clipboard := originalClipboard
+        Send("^v")
+        Sleep(300)  ; heuristic: allow target app to read clipboard before restoring.
+                   ; 300ms handles most apps; very slow targets (Electron, etc.) may
+                   ; need more. A timer-based restore would be more robust.
+    } finally {
+        A_Clipboard := originalClipboard
+    }
 }
 
 HandlePaletteKeyDown(wParam, lParam, msg, hwnd) {
