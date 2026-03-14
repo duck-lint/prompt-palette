@@ -241,7 +241,7 @@ FillTemplate(templateText) {
     values := Map()
 
     for _, key in placeholders {
-        result := InputBox("Enter value for: " key, "Fill Template")
+        result := ShowThemedInputDialog("Enter value for: " key, "Fill Template")
 
         if (result.Result != "OK") {
             try PaletteGui.Show()
@@ -338,6 +338,79 @@ HandlePaletteKeyDown(wParam, lParam, msg, hwnd) {
         case 0x0D:
             ActivateSelectedTemplate()
             return 0
+    }
+}
+
+ShowThemedInputDialog(prompt, title := "Input") {
+    global GH_BG, GH_INPUT, GH_TEXT, GH_BUTTON, GH_SUCCESS
+
+    dialogResult := {Result: "Cancel", Value: ""}
+
+    dlg := Gui("+AlwaysOnTop -MaximizeBox -MinimizeBox", title)
+    dlg.BackColor := GH_BG
+    dlg.MarginX := 16
+    dlg.MarginY := 14
+
+    dlg.SetFont("s10 w400 c" GH_TEXT, "Segoe UI")
+    dlg.AddText("xm ym w300", prompt)
+
+    dlg.SetFont("s10 w400 c" GH_TEXT, "Segoe UI")
+    inputCtrl := dlg.AddEdit(
+        "xm y+10 w300 h32 vInputValue Background" GH_INPUT " c" GH_TEXT
+    )
+
+    dlg.SetFont("s9 w600", "Segoe UI")
+    okBtn := dlg.AddText(
+        "xm y+12 w112 h30 Center +0x200 Background" GH_SUCCESS " cFFFFFF",
+        "OK"
+    )
+    cancelBtn := dlg.AddText(
+        "x+8 w112 h30 Center +0x200 Background" GH_BUTTON " c" GH_TEXT,
+        "Cancel"
+    )
+
+    okBtn.OnEvent("Click", (*) => _SubmitDialog())
+    cancelBtn.OnEvent("Click", (*) => _CancelDialog())
+    dlg.OnEvent("Escape", (*) => _CancelDialog())
+    dlg.OnEvent("Close", (*) => _CancelDialog())
+
+    ; Submit on Enter from within the edit control.
+    OnMessage(0x100, _DialogKeyHandler, 1)  ; WM_KEYDOWN
+
+    dlg.Show("AutoSize Center")
+    ApplyGitHubWindowChrome(dlg.Hwnd)
+    inputCtrl.Focus()
+
+    WinWaitClose("ahk_id " dlg.Hwnd)
+    OnMessage(0x100, _DialogKeyHandler, 0)  ; remove dialog handler
+    OnMessage(0x100, HandlePaletteKeyDown)  ; ensure palette handler is restored
+    return dialogResult
+
+    _SubmitDialog() {
+        dialogResult.Result := "OK"
+        dialogResult.Value := inputCtrl.Text
+        dlg.Destroy()
+    }
+
+    _CancelDialog() {
+        dialogResult.Result := "Cancel"
+        dialogResult.Value := ""
+        dlg.Destroy()
+    }
+
+    _DialogKeyHandler(wParam, lParam, msg, hwnd) {
+        try activeHwnd := WinGetID("A")
+        catch
+            return
+        if (activeHwnd != dlg.Hwnd) {
+            rootHwnd := DllCall("GetAncestor", "ptr", hwnd, "uint", 2, "ptr")
+            if (rootHwnd != dlg.Hwnd)
+                return
+        }
+        if (wParam = 0x0D) {   ; VK_RETURN
+            _SubmitDialog()
+            return 0
+        }
     }
 }
 
