@@ -289,7 +289,7 @@ JsonEscape(value) {
 }
 
 PasteText(text) {
-    originalClipboard := A_Clipboard
+    clipSaved := ClipboardAll()
     A_Clipboard := text
 
     try {
@@ -303,7 +303,7 @@ PasteText(text) {
                    ; 300ms handles most apps; very slow targets (Electron, etc.) may
                    ; need more. A timer-based restore would be more robust.
     } finally {
-        A_Clipboard := originalClipboard
+        A_Clipboard := clipSaved
     }
 }
 
