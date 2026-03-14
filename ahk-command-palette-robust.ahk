@@ -1,14 +1,25 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
-global PromptDir := A_ScriptDir "\prompts"
+global PromptDir := "C:\Users\madis\Projects\3. QoL Automation\prompt-command-palette\prompts"
 global PromptFiles := []
 global PromptDisplayNames := []
 global FilteredNames := []
-global PaletteGui := ""
+
+global PaletteGui := 0
 global PaletteHwnd := 0
-global SearchEdit := ""
-global TemplateList := ""
+global SearchEdit := 0
+global TemplateList := 0
+
+; GitHub-dark-ish palette (approximate, not a literal Primer port)
+global GH_BG := "B6BFB8"         ; window background
+global GH_PANEL := "E4EBE6"      ; elevated surface
+global GH_INPUT := "E4EBE6"      ; input field background
+global GH_BUTTON := "FE4C25"     ; neutral button
+global GH_BORDER := "160048"     ; borders / separators
+global GH_TEXT := "0A241B"       ; main text
+global GH_MUTED := "0A241B"      ; secondary text
+global GH_SUCCESS := "0FBF3E"    ; primary action
 
 ; Register a message-level key handler once.
 ; This is more reliable than context hotkeys for Edit controls inside a GUI.
@@ -18,16 +29,17 @@ OnMessage(0x100, HandlePaletteKeyDown) ; WM_KEYDOWN
 ^!Space::ShowPromptPalette()
 
 ShowPromptPalette() {
-    global PaletteGui, PaletteHwnd, SearchEdit, TemplateList
-
-    LoadPromptFiles()
+    global PromptDir, PromptFiles, PaletteGui, PaletteHwnd, SearchEdit, TemplateList
+    global GH_BG, GH_PANEL, GH_INPUT, GH_TEXT, GH_MUTED, GH_BUTTON, GH_SUCCESS
 
     if !DirExist(PromptDir) {
         MsgBox("Prompt directory not found:`n" PromptDir)
         return
     }
 
-    if PromptFiles.Length = 0 {
+    LoadPromptFiles()
+
+    if (PromptFiles.Length = 0) {
         MsgBox("No .json templates found in:`n" PromptDir)
         return
     }
@@ -37,28 +49,60 @@ ShowPromptPalette() {
 
     PaletteGui := Gui("+AlwaysOnTop -MaximizeBox -MinimizeBox", "Prompt Palette")
     PaletteHwnd := PaletteGui.Hwnd
-    PaletteGui.SetFont("s10", "Segoe UI")
+    PaletteGui.BackColor := GH_BG
+    PaletteGui.MarginX := 16
+    PaletteGui.MarginY := 14
 
-    PaletteGui.AddText("xm ym", "Search")
-    SearchEdit := PaletteGui.AddEdit("xm w560 vSearchBox")
-    TemplateList := PaletteGui.AddListBox("xm w560 r12 vTemplateList AltSubmit")
+    ; Header
+    PaletteGui.SetFont("s11 w600 c" GH_TEXT, "Segoe UI")
+    PaletteGui.AddText("xm ym", "Prompt palette")
+
+    PaletteGui.SetFont("s9 w400 c" GH_MUTED, "Segoe UI")
+    PaletteGui.AddText("xm y+4", "Search JSON templates and press Enter to paste.")
+
+    ; Search field
+    PaletteGui.SetFont("s10 w400 c" GH_TEXT, "Segoe UI")
+    SearchEdit := PaletteGui.AddEdit(
+        "xm y+10 w330 h32 vSearchBox Background" GH_INPUT " c" GH_TEXT
+    )
+
+    ; Results
+    TemplateList := PaletteGui.AddListBox(
+        "xm y+10 w330 r11 vTemplateList AltSubmit Background" GH_PANEL " c" GH_TEXT
+    )
 
     RefreshTemplateList("")
 
     SearchEdit.OnEvent("Change", OnSearchChange)
     TemplateList.OnEvent("DoubleClick", OnTemplateActivate)
 
-    SelectBtn := PaletteGui.AddButton("xm w120 Default", "Select")
+    ; Footer hint
+    PaletteGui.SetFont("s9 w400 c" GH_MUTED, "Segoe UI")
+    PaletteGui.AddText("xm y+10", "↑ ↓ move   Enter select   Esc cancel")
+
+    ; Action row
+    PaletteGui.SetFont("s9 w600", "Segoe UI")
+    SelectBtn := PaletteGui.AddText(
+        "xm y+10 w112 h30 Center +0x200 Background" GH_SUCCESS " cFFFFFF",
+        "Select"
+    )
     SelectBtn.OnEvent("Click", OnSelectClick)
-    CancelBtn := PaletteGui.AddButton("x+10 w120", "Cancel")
+
+    CancelBtn := PaletteGui.AddText(
+        "x+8 w112 h30 Center +0x200 Background" GH_BUTTON " c" GH_TEXT,
+        "Cancel"
+    )
     CancelBtn.OnEvent("Click", (*) => ClosePalette())
 
     PaletteGui.OnEvent("Escape", (*) => ClosePalette())
     PaletteGui.OnEvent("Close", (*) => ClosePalette())
 
     PaletteGui.Show("AutoSize Center")
+    ApplyGitHubWindowChrome(PaletteHwnd)
+
     WinActivate("ahk_id " PaletteHwnd)
     try WinWaitActive("ahk_id " PaletteHwnd, , 1)
+
     SearchEdit.Focus()
 }
 
@@ -69,15 +113,16 @@ ClosePalette() {
         try PaletteGui.Destroy()
     }
 
-    PaletteGui := ""
+    PaletteGui := 0
     PaletteHwnd := 0
-    SearchEdit := ""
-    TemplateList := ""
+    SearchEdit := 0
+    TemplateList := 0
     FilteredNames := []
 }
 
 LoadPromptFiles() {
     global PromptDir, PromptFiles, PromptDisplayNames
+
     PromptFiles := []
     PromptDisplayNames := []
 
@@ -181,7 +226,7 @@ ActivateSelectedTemplate() {
 FillTemplate(templateText) {
     global PaletteGui
 
-    ; hide palette so prompts are visible
+    ; Hide palette so the prompt dialogs are visible.
     try PaletteGui.Hide()
 
     placeholders := ExtractPlaceholders(templateText)
@@ -198,7 +243,6 @@ FillTemplate(templateText) {
         values[key] := JsonEscape(result.Value)
     }
 
-    ; restore palette if needed
     try PaletteGui.Show()
 
     output := templateText
@@ -251,7 +295,7 @@ PasteText(text) {
 }
 
 HandlePaletteKeyDown(wParam, lParam, msg, hwnd) {
-    global PaletteHwnd, PaletteGui, SearchEdit, TemplateList
+    global PaletteHwnd, PaletteGui
 
     ; No palette, no interception.
     if !PaletteHwnd || !IsObject(PaletteGui)
@@ -265,8 +309,7 @@ HandlePaletteKeyDown(wParam, lParam, msg, hwnd) {
     if (activeHwnd != PaletteHwnd)
         return
 
-    ; Determine whether the message came from a control inside our palette.
-    ; This is stricter and more reliable than assuming active window alone.
+    ; Only handle messages from controls inside our palette.
     rootHwnd := DllCall("GetAncestor", "ptr", hwnd, "uint", 2, "ptr") ; GA_ROOT = 2
     if (rootHwnd != PaletteHwnd)
         return
@@ -283,4 +326,52 @@ HandlePaletteKeyDown(wParam, lParam, msg, hwnd) {
             ActivateSelectedTemplate()
             return 0
     }
+}
+
+ApplyGitHubWindowChrome(hwnd) {
+    global GH_BG, GH_BORDER, GH_TEXT
+
+    ; Win11-only polish. Safe to no-op on unsupported builds.
+    static DWMWA_USE_IMMERSIVE_DARK_MODE := 20
+    static DWMWA_WINDOW_CORNER_PREFERENCE := 33
+    static DWMWA_BORDER_COLOR := 34
+    static DWMWA_CAPTION_COLOR := 35
+    static DWMWA_TEXT_COLOR := 36
+    static DWMWA_SYSTEMBACKDROP_TYPE := 38
+
+    static DWMWCP_ROUND := 2
+    static DWMSBT_MAINWINDOW := 2
+
+    try SetDwmWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, 1)
+    try SetDwmWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND)
+    try SetDwmWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ColorRef(GH_BORDER))
+    try SetDwmWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ColorRef(GH_BG))
+    try SetDwmWindowAttribute(hwnd, DWMWA_TEXT_COLOR, ColorRef(GH_TEXT))
+    try SetDwmWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_MAINWINDOW)
+}
+
+SetDwmWindowAttribute(hwnd, attribute, value) {
+    buffer := Buffer(4, 0)
+    NumPut("int", value, buffer)
+
+    return DllCall(
+        "dwmapi\DwmSetWindowAttribute",
+        "ptr", hwnd,
+        "int", attribute,
+        "ptr", buffer,
+        "int", 4,
+        "int"
+    )
+}
+
+ColorRef(rgbHex) {
+    rgb := "0x" RegExReplace(rgbHex, "^#")
+    rgb += 0
+
+    r := (rgb >> 16) & 0xFF
+    g := (rgb >> 8) & 0xFF
+    b := rgb & 0xFF
+
+    ; COLORREF is 0x00BBGGRR
+    return (b << 16) | (g << 8) | r
 }
