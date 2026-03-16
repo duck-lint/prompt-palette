@@ -204,7 +204,7 @@ MoveSelection(direction) {
 }
 
 ActivateSelectedTemplate() {
-    global TemplateList, PromptDir, FilteredNames
+    global TemplateList, PromptDir, FilteredNames, PaletteGui
 
     if !IsObject(TemplateList)
         return
@@ -226,6 +226,17 @@ ActivateSelectedTemplate() {
 
     if (rendered = "")
         return
+
+    if !ValidateRenderedJson(rendered, &validationError) {
+        try PaletteGui.Show()
+        MsgBox(
+            "Rendered template is not valid JSON, so nothing was pasted.`n`n"
+            validationError
+            "`n`nReview the template and the values you entered, then try again.",
+            "Invalid JSON"
+        )
+        return
+    }
 
     ClosePalette()
     PasteText(rendered)
@@ -279,13 +290,263 @@ ExtractPlaceholders(text) {
 }
 
 JsonEscape(value) {
-    value := StrReplace(value, "\", "\\")
-    value := StrReplace(value, "`r`n", "\n")
-    value := StrReplace(value, "`n", "\n")
-    value := StrReplace(value, "`r", "\n")
-    value := StrReplace(value, '"', '\"')
-    value := StrReplace(value, "`t", "\t")
-    return value
+    escaped := ""
+    length := StrLen(value)
+    index := 1
+
+    while (index <= length) {
+        ch := SubStr(value, index, 1)
+        code := Ord(ch)
+
+        if (code = 0x0D) {
+            if (index < length && Ord(SubStr(value, index + 1, 1)) = 0x0A)
+                index += 1
+            escaped .= "\n"
+        } else if (code = 0x0A) {
+            escaped .= "\n"
+        } else {
+            switch code {
+                case 0x08:
+                    escaped .= "\b"
+                case 0x09:
+                    escaped .= "\t"
+                case 0x0C:
+                    escaped .= "\f"
+                default:
+                    if (ch = "\")
+                        escaped .= "\\"
+                    else if (ch = '"')
+                        escaped .= '\"'
+                    else if (code < 0x20)
+                        escaped .= Format("\u{:04X}", code)
+                    else
+                        escaped .= ch
+            }
+        }
+
+        index += 1
+    }
+
+    return escaped
+}
+
+ValidateRenderedJson(text, &errorMessage) {
+    state := {Text: text, Length: StrLen(text), Pos: 1}
+
+    try {
+        JsonSkipWhitespace(state)
+        JsonParseValue(state)
+        JsonSkipWhitespace(state)
+
+        if (state.Pos <= state.Length)
+            JsonThrowError(state, "Unexpected trailing characters")
+
+        errorMessage := ""
+        return true
+    } catch as err {
+        errorMessage := err.Message
+        return false
+    }
+}
+
+JsonSkipWhitespace(state) {
+    while (state.Pos <= state.Length) {
+        code := Ord(SubStr(state.Text, state.Pos, 1))
+        if (code = 0x20 || code = 0x09 || code = 0x0A || code = 0x0D)
+            state.Pos += 1
+        else
+            break
+    }
+}
+
+JsonParseValue(state) {
+    if (state.Pos > state.Length)
+        JsonThrowError(state, "Unexpected end of JSON input")
+
+    ch := SubStr(state.Text, state.Pos, 1)
+    switch ch {
+        case "{":
+            JsonParseObject(state)
+        case "[":
+            JsonParseArray(state)
+        case '"':
+            JsonParseString(state)
+        case "t":
+            JsonParseLiteral(state, "true")
+        case "f":
+            JsonParseLiteral(state, "false")
+        case "n":
+            JsonParseLiteral(state, "null")
+        default:
+            JsonParseNumber(state)
+    }
+}
+
+JsonParseObject(state) {
+    state.Pos += 1
+    JsonSkipWhitespace(state)
+
+    if (state.Pos <= state.Length && SubStr(state.Text, state.Pos, 1) = "}") {
+        state.Pos += 1
+        return
+    }
+
+    loop {
+        JsonSkipWhitespace(state)
+        if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != '"')
+            JsonThrowError(state, "Expected object key string")
+
+        JsonParseString(state)
+        JsonSkipWhitespace(state)
+
+        if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != ":")
+            JsonThrowError(state, "Expected ':' after object key")
+
+        state.Pos += 1
+        JsonSkipWhitespace(state)
+        JsonParseValue(state)
+        JsonSkipWhitespace(state)
+
+        if (state.Pos > state.Length)
+            JsonThrowError(state, "Unterminated object")
+
+        ch := SubStr(state.Text, state.Pos, 1)
+        if (ch = "}") {
+            state.Pos += 1
+            return
+        }
+        if (ch != ",")
+            JsonThrowError(state, "Expected ',' or '}' in object")
+
+        state.Pos += 1
+    }
+}
+
+JsonParseArray(state) {
+    state.Pos += 1
+    JsonSkipWhitespace(state)
+
+    if (state.Pos <= state.Length && SubStr(state.Text, state.Pos, 1) = "]") {
+        state.Pos += 1
+        return
+    }
+
+    loop {
+        JsonSkipWhitespace(state)
+        JsonParseValue(state)
+        JsonSkipWhitespace(state)
+
+        if (state.Pos > state.Length)
+            JsonThrowError(state, "Unterminated array")
+
+        ch := SubStr(state.Text, state.Pos, 1)
+        if (ch = "]") {
+            state.Pos += 1
+            return
+        }
+        if (ch != ",")
+            JsonThrowError(state, "Expected ',' or ']' in array")
+
+        state.Pos += 1
+    }
+}
+
+JsonParseString(state) {
+    if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != '"')
+        JsonThrowError(state, "Expected string")
+
+    state.Pos += 1
+
+    while (state.Pos <= state.Length) {
+        ch := SubStr(state.Text, state.Pos, 1)
+        code := Ord(ch)
+
+        if (ch = '"') {
+            state.Pos += 1
+            return
+        }
+
+        if (code < 0x20)
+            JsonThrowError(state, "Unescaped control character in string")
+
+        if (ch = "\") {
+            state.Pos += 1
+            if (state.Pos > state.Length)
+                JsonThrowError(state, "Incomplete escape sequence")
+
+            esc := SubStr(state.Text, state.Pos, 1)
+            if InStr('"/\bfnrt', esc, true) {
+                state.Pos += 1
+                continue
+            }
+
+            if (esc = "u") {
+                if (state.Pos + 4 > state.Length)
+                    JsonThrowError(state, "Incomplete unicode escape")
+
+                hex := SubStr(state.Text, state.Pos + 1, 4)
+                if !RegExMatch(hex, "^[0-9A-Fa-f]{4}$")
+                    JsonThrowError(state, "Invalid unicode escape")
+
+                state.Pos += 5
+                continue
+            }
+
+            JsonThrowError(state, "Invalid escape sequence")
+        }
+
+        state.Pos += 1
+    }
+
+    JsonThrowError(state, "Unterminated string")
+}
+
+JsonParseNumber(state) {
+    remaining := SubStr(state.Text, state.Pos)
+    if !RegExMatch(remaining, "^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?", &match)
+        JsonThrowError(state, "Expected JSON value")
+
+    state.Pos += StrLen(match[0])
+}
+
+JsonParseLiteral(state, literal) {
+    if (SubStr(state.Text, state.Pos, StrLen(literal)) != literal)
+        JsonThrowError(state, "Expected '" literal "'")
+
+    state.Pos += StrLen(literal)
+}
+
+JsonThrowError(state, message) {
+    line := 1
+    column := 1
+    index := 1
+
+    while (index < state.Pos) {
+        code := Ord(SubStr(state.Text, index, 1))
+        if (code = 0x0D) {
+            if (index < state.Pos - 1 && Ord(SubStr(state.Text, index + 1, 1)) = 0x0A)
+                index += 1
+            line += 1
+            column := 1
+        } else if (code = 0x0A) {
+            line += 1
+            column := 1
+        } else {
+            column += 1
+        }
+        index += 1
+    }
+
+    excerptStart := Max(1, state.Pos - 20)
+    excerpt := SubStr(state.Text, excerptStart, 40)
+    excerpt := StrReplace(excerpt, "`r", "\r")
+    excerpt := StrReplace(excerpt, "`n", "\n")
+
+    throw Error(
+        message
+        " (line " line ", column " column ", position " state.Pos ").`n"
+        "Near: " excerpt
+    )
 }
 
 PasteText(text) {

@@ -36,6 +36,7 @@ It is intentionally small and local. No API calls, no dependencies beyond AutoHo
 * Double-click selection also supported
 * Automatic placeholder prompts
 * JSON-safe escaping for inserted text
+* Rendered JSON validation before paste
 * Templates stored as simple `.json` files
 * Minimal configuration
 
@@ -68,7 +69,9 @@ objective
 background
 ```
 
-Once entered, the final prompt JSON is automatically pasted into the active window.
+Once entered, the final prompt JSON is validated first, then pasted into the active window.
+If the template or entered values would produce invalid JSON, the script shows an
+error and does not paste anything.
 
 ---
 
@@ -180,7 +183,13 @@ When a template contains placeholders such as:
 
 the script will prompt you for those values.
 
-Entered text is automatically escaped to remain valid JSON.
+Entered text is automatically escaped to remain valid JSON, including quotes,
+backslashes, tabs, line breaks, form-feed, backspace, and other control
+characters in the JSON control-character range.
+
+Before anything is pasted, the fully rendered template is validated as JSON. If
+the rendered output is malformed, the script fails fast with a visible error so
+you do not accidentally paste invalid JSON into the target application.
 
 ---
 
@@ -222,4 +231,3 @@ Contributions are welcome if they keep the core idea intact: **fast structured p
 If you have improvements that maintain that simplicity, feel free to open an issue or pull request.
 
 ---
-
