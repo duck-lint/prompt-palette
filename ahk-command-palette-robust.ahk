@@ -272,7 +272,7 @@ RenderTemplate(templateText, values) {
         startPos := match.Pos + match.Len
     }
 
-    return output SubStr(templateText, startPos)
+    return output . SubStr(templateText, startPos)
 }
 
 ExtractPlaceholders(text) {
