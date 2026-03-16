@@ -369,7 +369,7 @@ JsonParseValue(state) {
             JsonParseObject(state)
         case "[":
             JsonParseArray(state)
-        case '"':
+        case """":
             JsonParseString(state)
         case "t":
             JsonParseLiteral(state, "true")
@@ -393,7 +393,7 @@ JsonParseObject(state) {
 
     loop {
         JsonSkipWhitespace(state)
-        if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != '"')
+        if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != """")
             JsonThrowError(state, "Expected object key string")
 
         JsonParseString(state)
