@@ -8,6 +8,7 @@ global FilteredNames := []
 
 global PaletteGui := 0
 global PaletteHwnd := 0
+global InvokingWindowHwnd := 0
 global SearchEdit := 0
 global TemplateList := 0
 
@@ -32,7 +33,7 @@ OnMessage(0x100, HandlePaletteKeyDown) ; WM_KEYDOWN
 ^!Space::ShowPromptPalette()
 
 ShowPromptPalette() {
-    global PromptDir, PromptFiles, PaletteGui, PaletteHwnd, SearchEdit, TemplateList
+    global PromptDir, PromptFiles, PaletteGui, PaletteHwnd, InvokingWindowHwnd, SearchEdit, TemplateList
     global GH_BG, GH_PANEL, GH_INPUT, GH_TEXT, GH_MUTED, GH_BUTTON, GH_SUCCESS
 
     if !DirExist(PromptDir) {
@@ -47,8 +48,19 @@ ShowPromptPalette() {
         return
     }
 
+    try {
+        capturedHwnd := WinGetID("A")
+    } catch {
+        MsgBox("Unable to determine the active window. The prompt palette cannot be opened right now.")
+        return
+    }
+    if (capturedHwnd = PaletteHwnd && InvokingWindowHwnd)
+        capturedHwnd := InvokingWindowHwnd
+
     if IsObject(PaletteGui)
         ClosePalette()
+
+    InvokingWindowHwnd := capturedHwnd
 
     PaletteGui := Gui("+AlwaysOnTop -MaximizeBox -MinimizeBox", "Prompt Palette")
     PaletteHwnd := PaletteGui.Hwnd
@@ -115,7 +127,7 @@ ShowPromptPalette() {
 }
 
 ClosePalette() {
-    global PaletteGui, PaletteHwnd, SearchEdit, TemplateList, FilteredNames
+    global PaletteGui, PaletteHwnd, InvokingWindowHwnd, SearchEdit, TemplateList, FilteredNames
 
     if IsObject(PaletteGui) {
         try PaletteGui.Destroy()
@@ -123,6 +135,7 @@ ClosePalette() {
 
     PaletteGui := 0
     PaletteHwnd := 0
+    InvokingWindowHwnd := 0
     SearchEdit := 0
     TemplateList := 0
     FilteredNames := []
@@ -204,7 +217,7 @@ MoveSelection(direction) {
 }
 
 ActivateSelectedTemplate() {
-    global TemplateList, PromptDir, FilteredNames
+    global TemplateList, PromptDir, FilteredNames, PaletteGui
 
     if !IsObject(TemplateList)
         return
@@ -227,8 +240,17 @@ ActivateSelectedTemplate() {
     if (rendered = "")
         return
 
+    errorMessage := ""
+    if !ValidateRenderedJson(rendered, &errorMessage) {
+        MsgBox("JSON validation failed:`n" errorMessage)
+        return
+    }
+
+    global InvokingWindowHwnd
+
+    targetHwnd := InvokingWindowHwnd
     ClosePalette()
-    PasteText(rendered)
+    PasteText(rendered, targetHwnd)
 }
 
 FillTemplate(templateText) {
@@ -253,12 +275,26 @@ FillTemplate(templateText) {
 
     try PaletteGui.Show()
 
-    output := templateText
-    for key, value in values {
-        output := StrReplace(output, "{{" key "}}", value)
+    return RenderTemplate(templateText, values)
+}
+
+RenderTemplate(templateText, values) {
+    output := ""
+    startPos := 1
+
+    while RegExMatch(templateText, "\{\{([A-Za-z0-9_\-]+)\}\}", &match, startPos) {
+        output .= SubStr(templateText, startPos, match.Pos - startPos)
+
+        key := match[1]
+        if values.Has(key)
+            output .= values[key]
+        else
+            output .= "{{" key "}}"
+
+        startPos := match.Pos + match.Len
     }
 
-    return output
+    return output . SubStr(templateText, startPos)
 }
 
 ExtractPlaceholders(text) {
@@ -279,22 +315,294 @@ ExtractPlaceholders(text) {
 }
 
 JsonEscape(value) {
-    value := StrReplace(value, "\", "\\")
-    value := StrReplace(value, "`r`n", "\n")
-    value := StrReplace(value, "`n", "\n")
-    value := StrReplace(value, "`r", "\n")
-    value := StrReplace(value, '"', '\"')
-    value := StrReplace(value, "`t", "\t")
-    return value
+    escaped := ""
+    length := StrLen(value)
+    index := 1
+
+    while (index <= length) {
+        ch := SubStr(value, index, 1)
+        code := Ord(ch)
+
+        if (code = 0x0D) {
+            if (index < length && Ord(SubStr(value, index + 1, 1)) = 0x0A)
+                index += 1
+            escaped .= "\n"
+        } else if (code = 0x0A) {
+            escaped .= "\n"
+        } else {
+            switch code {
+                case 0x08:
+                    escaped .= "\b"
+                case 0x09:
+                    escaped .= "\t"
+                case 0x0C:
+                    escaped .= "\f"
+                default:
+                    if (code = 0x5C)
+                        escaped .= Chr(0x5C) Chr(0x5C)
+                    else if (code = 0x22)
+                        escaped .= Chr(0x5C) Chr(0x22)
+                    else if (code < 0x20)
+                        escaped .= Format("\u{:04x}", code)
+                    else
+                        escaped .= ch
+            }
+        }
+
+        index += 1
+    }
+
+    return escaped
 }
 
-PasteText(text) {
+ValidateRenderedJson(text, &errorMessage) {
+    state := {Text: text, Length: StrLen(text), Pos: 1}
+
+    try {
+        JsonSkipWhitespace(state)
+        JsonParseValue(state)
+        JsonSkipWhitespace(state)
+
+        if (state.Pos <= state.Length)
+            JsonThrowError(state, "Unexpected trailing characters")
+
+        errorMessage := ""
+        return true
+    } catch err {
+        errorMessage := err.Message
+        return false
+    }
+}
+
+JsonSkipWhitespace(state) {
+    while (state.Pos <= state.Length) {
+        code := Ord(SubStr(state.Text, state.Pos, 1))
+        if (code = 0x20 || code = 0x09 || code = 0x0A || code = 0x0D)
+            state.Pos += 1
+        else
+            break
+    }
+}
+
+JsonParseValue(state) {
+    if (state.Pos > state.Length)
+        JsonThrowError(state, "Unexpected end of JSON input")
+
+    code := Ord(SubStr(state.Text, state.Pos, 1))
+    switch code {
+        case 0x7B:
+            JsonParseObject(state)
+        case 0x5B:
+            JsonParseArray(state)
+        case 0x22:
+            JsonParseString(state)
+        case 0x74:
+            JsonParseLiteral(state, "true")
+        case 0x66:
+            JsonParseLiteral(state, "false")
+        case 0x6E:
+            JsonParseLiteral(state, "null")
+        default:
+            JsonParseNumber(state)
+    }
+}
+
+JsonParseObject(state) {
+    state.Pos += 1
+    JsonSkipWhitespace(state)
+
+    if (state.Pos <= state.Length && SubStr(state.Text, state.Pos, 1) = "}") {
+        state.Pos += 1
+        return
+    }
+
+    loop {
+        JsonSkipWhitespace(state)
+        if (state.Pos > state.Length || Ord(SubStr(state.Text, state.Pos, 1)) != 0x22)
+            JsonThrowError(state, "Expected object key string")
+
+        JsonParseString(state)
+        JsonSkipWhitespace(state)
+
+        if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != ":")
+            JsonThrowError(state, "Expected ':' after object key")
+
+        state.Pos += 1
+        JsonSkipWhitespace(state)
+        JsonParseValue(state)
+        JsonSkipWhitespace(state)
+
+        if (state.Pos > state.Length)
+            JsonThrowError(state, "Unterminated object")
+
+        ch := SubStr(state.Text, state.Pos, 1)
+        if (ch = "}") {
+            state.Pos += 1
+            return
+        }
+        if (ch != ",")
+            JsonThrowError(state, "Expected ',' or '}' in object")
+
+        state.Pos += 1
+    }
+}
+
+JsonParseArray(state) {
+    state.Pos += 1
+    JsonSkipWhitespace(state)
+
+    if (state.Pos <= state.Length && SubStr(state.Text, state.Pos, 1) = "]") {
+        state.Pos += 1
+        return
+    }
+
+    loop {
+        JsonSkipWhitespace(state)
+        JsonParseValue(state)
+        JsonSkipWhitespace(state)
+
+        if (state.Pos > state.Length)
+            JsonThrowError(state, "Unterminated array")
+
+        ch := SubStr(state.Text, state.Pos, 1)
+        if (ch = "]") {
+            state.Pos += 1
+            return
+        }
+        if (ch != ",")
+            JsonThrowError(state, "Expected ',' or ']' in array")
+
+        state.Pos += 1
+    }
+}
+
+JsonParseString(state) {
+    if (state.Pos > state.Length || Ord(SubStr(state.Text, state.Pos, 1)) != 0x22)
+        JsonThrowError(state, "Expected string")
+
+    state.Pos += 1
+
+    while (state.Pos <= state.Length) {
+        ch := SubStr(state.Text, state.Pos, 1)
+        code := Ord(ch)
+
+        if (code = 0x22) {
+            state.Pos += 1
+            return
+        }
+
+        if (code < 0x20)
+            JsonThrowError(state, "Unescaped control character in string")
+
+        if (code = 0x5C) {
+            state.Pos += 1
+            if (state.Pos > state.Length)
+                JsonThrowError(state, "Incomplete escape sequence")
+
+            escCode := Ord(SubStr(state.Text, state.Pos, 1))
+            if (escCode = 0x22 || escCode = 0x5C || escCode = 0x2F || escCode = 0x62
+                || escCode = 0x66 || escCode = 0x6E || escCode = 0x72 || escCode = 0x74) {
+                state.Pos += 1
+                continue
+            }
+
+            if (escCode = 0x75) {
+                if (state.Pos + 4 > state.Length)
+                    JsonThrowError(state, "Incomplete unicode escape")
+
+                hex := SubStr(state.Text, state.Pos + 1, 4)
+                if !RegExMatch(hex, "^[0-9A-Fa-f]{4}$")
+                    JsonThrowError(state, "Invalid unicode escape")
+
+                state.Pos += 5
+                continue
+            }
+
+            JsonThrowError(state, "Invalid escape sequence")
+        }
+
+        state.Pos += 1
+    }
+
+    JsonThrowError(state, "Unterminated string")
+}
+
+JsonParseNumber(state) {
+    remaining := SubStr(state.Text, state.Pos)
+    if !RegExMatch(remaining, "^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?", &match)
+        JsonThrowError(state, "Expected JSON value")
+
+    state.Pos += StrLen(match[0])
+}
+
+JsonParseLiteral(state, literal) {
+    if (SubStr(state.Text, state.Pos, StrLen(literal)) != literal)
+        JsonThrowError(state, "Expected '" literal "'")
+
+    state.Pos += StrLen(literal)
+}
+
+JsonThrowError(state, message) {
+    line := 1
+    column := 1
+    index := 1
+
+    while (index < state.Pos) {
+        code := Ord(SubStr(state.Text, index, 1))
+        if (code = 0x0D) {
+            if (index < state.Pos - 1 && Ord(SubStr(state.Text, index + 1, 1)) = 0x0A)
+                index += 1
+            line += 1
+            column := 1
+        } else if (code = 0x0A) {
+            line += 1
+            column := 1
+        } else {
+            column += 1
+        }
+        index += 1
+    }
+
+    excerptStart := Max(1, state.Pos - 20)
+    excerpt := SubStr(state.Text, excerptStart, 40)
+    excerpt := StrReplace(excerpt, "`r", "\r")
+    excerpt := StrReplace(excerpt, "`n", "\n")
+
+    throw Error(
+        message
+        " (line " line ", column " column ", position " state.Pos ").`n"
+        "Near: " excerpt
+    )
+}
+
+PasteText(text, targetHwnd) {
     clipSaved := ClipboardAll()
     A_Clipboard := text
 
     try {
         if !ClipWait(1) {
             MsgBox("Clipboard update failed.")
+            return
+        }
+
+        if !targetHwnd || !WinExist("ahk_id " targetHwnd) {
+            MsgBox("Paste canceled because the original target window is no longer available.")
+            return
+        }
+
+        try WinActivate("ahk_id " targetHwnd)
+        try WinWaitActive("ahk_id " targetHwnd, , 1)
+
+        wasReactivated := false
+        try {
+            wasReactivated := (WinGetID("A") == targetHwnd)
+        } catch {
+            ; Treat any failure to query the active window as inability to reactivate.
+            wasReactivated := false
+        }
+
+        if !wasReactivated {
+            MsgBox("Paste canceled because the original target window could not be reactivated.")
             return
         }
 
