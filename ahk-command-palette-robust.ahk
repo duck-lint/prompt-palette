@@ -240,8 +240,14 @@ ActivateSelectedTemplate() {
     if (rendered = "")
         return
 
+    errorMessage := ""
+    if !ValidateRenderedJson(rendered, &errorMessage) {
+        MsgBox("JSON validation failed:`n" errorMessage)
+        return
+    }
+
     ClosePalette()
-    PasteText(rendered, targetHwnd)
+    PasteText(rendered, InvokingWindowHwnd)
 }
 
 FillTemplate(templateText) {
