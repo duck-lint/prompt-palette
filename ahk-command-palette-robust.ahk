@@ -452,7 +452,7 @@ JsonParseArray(state) {
 }
 
 JsonParseString(state) {
-    if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != '"')
+    if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != """")
         JsonThrowError(state, "Expected string")
 
     state.Pos += 1
@@ -461,7 +461,7 @@ JsonParseString(state) {
         ch := SubStr(state.Text, state.Pos, 1)
         code := Ord(ch)
 
-        if (ch = '"') {
+        if (ch = """") {
             state.Pos += 1
             return
         }
@@ -475,7 +475,7 @@ JsonParseString(state) {
                 JsonThrowError(state, "Incomplete escape sequence")
 
             esc := SubStr(state.Text, state.Pos, 1)
-            if (esc = '"' || esc = "\" || esc = "/" || esc = "b"
+            if (esc = """" || esc = "\" || esc = "/" || esc = "b"
                 || esc = "f" || esc = "n" || esc = "r" || esc = "t") {
                 state.Pos += 1
                 continue
