@@ -313,10 +313,10 @@ JsonEscape(value) {
                 case 0x0C:
                     escaped .= "\f"
                 default:
-                    if (ch = "\")
-                        escaped .= "\\"
-                    else if (ch = '"')
-                        escaped .= '\"'
+                    if (code = 0x5C)
+                        escaped .= Chr(0x5C) Chr(0x5C)
+                    else if (code = 0x22)
+                        escaped .= Chr(0x5C) Chr(0x22)
                     else if (code < 0x20)
                         escaped .= Format("\u{:04x}", code)
                     else
@@ -363,19 +363,19 @@ JsonParseValue(state) {
     if (state.Pos > state.Length)
         JsonThrowError(state, "Unexpected end of JSON input")
 
-    ch := SubStr(state.Text, state.Pos, 1)
-    switch ch {
-        case "{":
+    code := Ord(SubStr(state.Text, state.Pos, 1))
+    switch code {
+        case 0x7B:
             JsonParseObject(state)
-        case "[":
+        case 0x5B:
             JsonParseArray(state)
-        case """":
+        case 0x22:
             JsonParseString(state)
-        case "t":
+        case 0x74:
             JsonParseLiteral(state, "true")
-        case "f":
+        case 0x66:
             JsonParseLiteral(state, "false")
-        case "n":
+        case 0x6E:
             JsonParseLiteral(state, "null")
         default:
             JsonParseNumber(state)
@@ -393,7 +393,7 @@ JsonParseObject(state) {
 
     loop {
         JsonSkipWhitespace(state)
-        if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != """")
+        if (state.Pos > state.Length || Ord(SubStr(state.Text, state.Pos, 1)) != 0x22)
             JsonThrowError(state, "Expected object key string")
 
         JsonParseString(state)
@@ -452,7 +452,7 @@ JsonParseArray(state) {
 }
 
 JsonParseString(state) {
-    if (state.Pos > state.Length || SubStr(state.Text, state.Pos, 1) != """")
+    if (state.Pos > state.Length || Ord(SubStr(state.Text, state.Pos, 1)) != 0x22)
         JsonThrowError(state, "Expected string")
 
     state.Pos += 1
@@ -461,7 +461,7 @@ JsonParseString(state) {
         ch := SubStr(state.Text, state.Pos, 1)
         code := Ord(ch)
 
-        if (ch = """") {
+        if (code = 0x22) {
             state.Pos += 1
             return
         }
@@ -469,19 +469,19 @@ JsonParseString(state) {
         if (code < 0x20)
             JsonThrowError(state, "Unescaped control character in string")
 
-        if (ch = "\") {
+        if (code = 0x5C) {
             state.Pos += 1
             if (state.Pos > state.Length)
                 JsonThrowError(state, "Incomplete escape sequence")
 
-            esc := SubStr(state.Text, state.Pos, 1)
-            if (esc = """" || esc = "\" || esc = "/" || esc = "b"
-                || esc = "f" || esc = "n" || esc = "r" || esc = "t") {
+            escCode := Ord(SubStr(state.Text, state.Pos, 1))
+            if (escCode = 0x22 || escCode = 0x5C || escCode = 0x2F || escCode = 0x62
+                || escCode = 0x66 || escCode = 0x6E || escCode = 0x72 || escCode = 0x74) {
                 state.Pos += 1
                 continue
             }
 
-            if (esc = "u") {
+            if (escCode = 0x75) {
                 if (state.Pos + 4 > state.Length)
                     JsonThrowError(state, "Incomplete unicode escape")
 
