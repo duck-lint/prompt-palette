@@ -267,12 +267,26 @@ FillTemplate(templateText) {
 
     try PaletteGui.Show()
 
-    output := templateText
-    for key, value in values {
-        output := StrReplace(output, "{{" key "}}", value)
+    return RenderTemplate(templateText, values)
+}
+
+RenderTemplate(templateText, values) {
+    output := ""
+    startPos := 1
+
+    while RegExMatch(templateText, "\{\{([A-Za-z0-9_\-]+)\}\}", &match, startPos) {
+        output .= SubStr(templateText, startPos, match.Pos - startPos)
+
+        key := match[1]
+        if values.Has(key)
+            output .= values[key]
+        else
+            output .= "{{" key "}}"
+
+        startPos := match.Pos + match.Len
     }
 
-    return output
+    return output . SubStr(templateText, startPos)
 }
 
 ExtractPlaceholders(text) {
