@@ -318,7 +318,7 @@ JsonEscape(value) {
                     else if (ch = '"')
                         escaped .= '\"'
                     else if (code < 0x20)
-                        escaped .= Format("\u{:04X}", code)
+                        escaped .= Format("\u{:04x}", code)
                     else
                         escaped .= ch
             }
@@ -475,7 +475,8 @@ JsonParseString(state) {
                 JsonThrowError(state, "Incomplete escape sequence")
 
             esc := SubStr(state.Text, state.Pos, 1)
-            if InStr('"/\bfnrt', esc, true) {
+            if (esc = '"' || esc = "\" || esc = "/" || esc = "b"
+                || esc = "f" || esc = "n" || esc = "r" || esc = "t") {
                 state.Pos += 1
                 continue
             }
