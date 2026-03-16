@@ -48,7 +48,12 @@ ShowPromptPalette() {
         return
     }
 
-    capturedHwnd := WinGetID("A")
+    try {
+        capturedHwnd := WinGetID("A")
+    } catch {
+        MsgBox("Unable to determine the active window. The prompt palette cannot be opened right now.")
+        return
+    }
     if (capturedHwnd = PaletteHwnd && InvokingWindowHwnd)
         capturedHwnd := InvokingWindowHwnd
 
