@@ -246,8 +246,11 @@ ActivateSelectedTemplate() {
         return
     }
 
+    global InvokingWindowHwnd
+
+    targetHwnd := InvokingWindowHwnd
     ClosePalette()
-    PasteText(rendered, InvokingWindowHwnd)
+    PasteText(rendered, targetHwnd)
 }
 
 FillTemplate(templateText) {
