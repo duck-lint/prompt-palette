@@ -8,6 +8,7 @@ global FilteredNames := []
 
 global PaletteGui := 0
 global PaletteHwnd := 0
+global InvokingWindowHwnd := 0
 global SearchEdit := 0
 global TemplateList := 0
 
@@ -32,7 +33,7 @@ OnMessage(0x100, HandlePaletteKeyDown) ; WM_KEYDOWN
 ^!Space::ShowPromptPalette()
 
 ShowPromptPalette() {
-    global PromptDir, PromptFiles, PaletteGui, PaletteHwnd, SearchEdit, TemplateList
+    global PromptDir, PromptFiles, PaletteGui, PaletteHwnd, InvokingWindowHwnd, SearchEdit, TemplateList
     global GH_BG, GH_PANEL, GH_INPUT, GH_TEXT, GH_MUTED, GH_BUTTON, GH_SUCCESS
 
     if !DirExist(PromptDir) {
@@ -47,8 +48,14 @@ ShowPromptPalette() {
         return
     }
 
+    capturedHwnd := WinGetID("A")
+    if (capturedHwnd = PaletteHwnd && InvokingWindowHwnd)
+        capturedHwnd := InvokingWindowHwnd
+
     if IsObject(PaletteGui)
         ClosePalette()
+
+    InvokingWindowHwnd := capturedHwnd
 
     PaletteGui := Gui("+AlwaysOnTop -MaximizeBox -MinimizeBox", "Prompt Palette")
     PaletteHwnd := PaletteGui.Hwnd
@@ -115,7 +122,7 @@ ShowPromptPalette() {
 }
 
 ClosePalette() {
-    global PaletteGui, PaletteHwnd, SearchEdit, TemplateList, FilteredNames
+    global PaletteGui, PaletteHwnd, InvokingWindowHwnd, SearchEdit, TemplateList, FilteredNames
 
     if IsObject(PaletteGui) {
         try PaletteGui.Destroy()
@@ -123,6 +130,7 @@ ClosePalette() {
 
     PaletteGui := 0
     PaletteHwnd := 0
+    InvokingWindowHwnd := 0
     SearchEdit := 0
     TemplateList := 0
     FilteredNames := []
@@ -204,7 +212,7 @@ MoveSelection(direction) {
 }
 
 ActivateSelectedTemplate() {
-    global TemplateList, PromptDir, FilteredNames
+    global TemplateList, PromptDir, InvokingWindowHwnd, FilteredNames
 
     if !IsObject(TemplateList)
         return
@@ -227,8 +235,9 @@ ActivateSelectedTemplate() {
     if (rendered = "")
         return
 
+    targetHwnd := InvokingWindowHwnd
     ClosePalette()
-    PasteText(rendered)
+    PasteText(rendered, targetHwnd)
 }
 
 FillTemplate(templateText) {
@@ -288,13 +297,26 @@ JsonEscape(value) {
     return value
 }
 
-PasteText(text) {
+PasteText(text, targetHwnd) {
     clipSaved := ClipboardAll()
     A_Clipboard := text
 
     try {
         if !ClipWait(1) {
             MsgBox("Clipboard update failed.")
+            return
+        }
+
+        if !targetHwnd || !WinExist("ahk_id " targetHwnd) {
+            MsgBox("Paste canceled because the original target window is no longer available.")
+            return
+        }
+
+        try WinActivate("ahk_id " targetHwnd)
+        try WinWaitActive("ahk_id " targetHwnd, , 1)
+
+        if (WinGetID("A") != targetHwnd) {
+            MsgBox("Paste canceled because the original target window could not be reactivated.")
             return
         }
 
