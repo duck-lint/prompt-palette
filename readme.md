@@ -216,7 +216,7 @@ If you change the paste flow, verify these cases manually:
    * focus app A and open the palette
    * choose a template with placeholders
    * close app A before pressing `OK` on the final placeholder dialog
-   * confirm the script shows a cancelation message, does not paste into the current foreground window, and restores the clipboard
+   * confirm the script shows a cancellation message, does not paste into the current foreground window, and restores the clipboard
 
 ---
 
