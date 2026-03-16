@@ -343,7 +343,7 @@ ValidateRenderedJson(text, &errorMessage) {
 
         errorMessage := ""
         return true
-    } catch as err {
+    } catch err {
         errorMessage := err.Message
         return false
     }
