@@ -8,6 +8,7 @@ global FilteredNames := []
 
 global PaletteGui := 0
 global PaletteHwnd := 0
+global InvokingWindowHwnd := 0
 global SearchEdit := 0
 global TemplateList := 0
 
@@ -32,7 +33,7 @@ OnMessage(0x100, HandlePaletteKeyDown) ; WM_KEYDOWN
 ^!Space::ShowPromptPalette()
 
 ShowPromptPalette() {
-    global PromptDir, PromptFiles, PaletteGui, PaletteHwnd, SearchEdit, TemplateList
+    global PromptDir, PromptFiles, PaletteGui, PaletteHwnd, InvokingWindowHwnd, SearchEdit, TemplateList
     global GH_BG, GH_PANEL, GH_INPUT, GH_TEXT, GH_MUTED, GH_BUTTON, GH_SUCCESS
 
     if !DirExist(PromptDir) {
@@ -47,8 +48,19 @@ ShowPromptPalette() {
         return
     }
 
+    try {
+        capturedHwnd := WinGetID("A")
+    } catch {
+        MsgBox("Unable to determine the active window. The prompt palette cannot be opened right now.")
+        return
+    }
+    if (capturedHwnd = PaletteHwnd && InvokingWindowHwnd)
+        capturedHwnd := InvokingWindowHwnd
+
     if IsObject(PaletteGui)
         ClosePalette()
+
+    InvokingWindowHwnd := capturedHwnd
 
     PaletteGui := Gui("+AlwaysOnTop -MaximizeBox -MinimizeBox", "Prompt Palette")
     PaletteHwnd := PaletteGui.Hwnd
@@ -115,7 +127,7 @@ ShowPromptPalette() {
 }
 
 ClosePalette() {
-    global PaletteGui, PaletteHwnd, SearchEdit, TemplateList, FilteredNames
+    global PaletteGui, PaletteHwnd, InvokingWindowHwnd, SearchEdit, TemplateList, FilteredNames
 
     if IsObject(PaletteGui) {
         try PaletteGui.Destroy()
@@ -123,6 +135,7 @@ ClosePalette() {
 
     PaletteGui := 0
     PaletteHwnd := 0
+    InvokingWindowHwnd := 0
     SearchEdit := 0
     TemplateList := 0
     FilteredNames := []
@@ -227,19 +240,8 @@ ActivateSelectedTemplate() {
     if (rendered = "")
         return
 
-    if !ValidateRenderedJson(rendered, &validationError) {
-        try PaletteGui.Show()
-        MsgBox(
-            "Rendered template is not valid JSON, so nothing was pasted.`n`n"
-            validationError
-            "`n`nReview the template and the values you entered, then try again.",
-            "Invalid JSON"
-        )
-        return
-    }
-
     ClosePalette()
-    PasteText(rendered)
+    PasteText(rendered, targetHwnd)
 }
 
 FillTemplate(templateText) {
@@ -264,12 +266,26 @@ FillTemplate(templateText) {
 
     try PaletteGui.Show()
 
-    output := templateText
-    for key, value in values {
-        output := StrReplace(output, "{{" key "}}", value)
+    return RenderTemplate(templateText, values)
+}
+
+RenderTemplate(templateText, values) {
+    output := ""
+    startPos := 1
+
+    while RegExMatch(templateText, "\{\{([A-Za-z0-9_\-]+)\}\}", &match, startPos) {
+        output .= SubStr(templateText, startPos, match.Pos - startPos)
+
+        key := match[1]
+        if values.Has(key)
+            output .= values[key]
+        else
+            output .= "{{" key "}}"
+
+        startPos := match.Pos + match.Len
     }
 
-    return output
+    return output . SubStr(templateText, startPos)
 }
 
 ExtractPlaceholders(text) {
@@ -550,13 +566,34 @@ JsonThrowError(state, message) {
     )
 }
 
-PasteText(text) {
+PasteText(text, targetHwnd) {
     clipSaved := ClipboardAll()
     A_Clipboard := text
 
     try {
         if !ClipWait(1) {
             MsgBox("Clipboard update failed.")
+            return
+        }
+
+        if !targetHwnd || !WinExist("ahk_id " targetHwnd) {
+            MsgBox("Paste canceled because the original target window is no longer available.")
+            return
+        }
+
+        try WinActivate("ahk_id " targetHwnd)
+        try WinWaitActive("ahk_id " targetHwnd, , 1)
+
+        wasReactivated := false
+        try {
+            wasReactivated := (WinGetID("A") == targetHwnd)
+        } catch {
+            ; Treat any failure to query the active window as inability to reactivate.
+            wasReactivated := false
+        }
+
+        if !wasReactivated {
+            MsgBox("Paste canceled because the original target window could not be reactivated.")
             return
         }
 

@@ -172,6 +172,18 @@ Type in the search box to filter templates.
 
 ---
 
+## Paste safety
+
+The script binds each paste to the window that was active when you invoked the palette.
+
+That means:
+
+* switching focus while you fill placeholders will not redirect the paste to a different app
+* if the original target window closes before paste, the script fails closed and shows a message
+* the clipboard is still restored after the paste attempt
+
+---
+
 ## How placeholders work
 
 When a template contains placeholders such as:
@@ -190,6 +202,30 @@ characters in the JSON control-character range.
 Before anything is pasted, the fully rendered template is validated as JSON. If
 the rendered output is malformed, the script fails fast with a visible error so
 you do not accidentally paste invalid JSON into the target application.
+
+---
+
+## Manual regression checks
+
+If you change the paste flow, verify these cases manually:
+
+1. **Normal same-window paste**
+   * focus a text field
+   * open the palette with `Ctrl + Alt + Space`
+   * select a template and complete any placeholders
+   * confirm the rendered prompt pastes into that original field and your prior clipboard contents are restored
+
+2. **Switch focus during placeholder entry**
+   * focus app A and open the palette
+   * choose a template with placeholders
+   * while the input dialog is open, switch to app B
+   * finish the dialog and confirm the prompt still pastes into app A, not app B
+
+3. **Close the original target before OK**
+   * focus app A and open the palette
+   * choose a template with placeholders
+   * close app A before pressing `OK` on the final placeholder dialog
+   * confirm the script shows a cancellation message, does not paste into the current foreground window, and restores the clipboard
 
 ---
 
