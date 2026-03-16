@@ -320,7 +320,15 @@ PasteText(text, targetHwnd) {
         try WinActivate("ahk_id " targetHwnd)
         try WinWaitActive("ahk_id " targetHwnd, , 1)
 
-        if (WinGetID("A") != targetHwnd) {
+        wasReactivated := false
+        try {
+            wasReactivated := (WinGetID("A") == targetHwnd)
+        } catch {
+            ; Treat any failure to query the active window as inability to reactivate.
+            wasReactivated := false
+        }
+
+        if !wasReactivated {
             MsgBox("Paste canceled because the original target window could not be reactivated.")
             return
         }
