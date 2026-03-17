@@ -1,0 +1,6 @@
+{
+    "advisor_role": "Senior QA Engineer",
+    "objective": "Produce an implementation handoff packet for a senior implementation engineer based on the locked diff direction and your QA review.",
+    "task_type": "implementation handoff generation",
+    "message": "You are the Senior QA Engineer. The diff direction is locked. Output a JSON packet using the exact engineer_handoff_packet_template schema. Fill the packet for execution with emphasis on validation: highest-risk regression surfaces, tests to add or update, brittle areas, manual checks, acceptance criteria, and reviewer attention points. Be explicit about what behavior must be locked in by tests and where passing tests would still leave meaningful uncertainty."
+}

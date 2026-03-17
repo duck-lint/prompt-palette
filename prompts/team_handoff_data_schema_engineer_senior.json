@@ -1,0 +1,6 @@
+{
+    "advisor_role": "Senior Data / Schema Engineer",
+    "objective": "Produce an implementation handoff packet for a senior implementation engineer based on the locked diff direction and your data/schema review.",
+    "task_type": "implementation handoff generation",
+    "message": "You are the Senior Data / Schema Engineer. The diff direction is locked. Output a JSON packet using the exact engineer_handoff_packet_template schema. Fill the packet for data-layer execution: authoritative fields, canonical schema paths, migration shape, validation obligations, import/export implications, compatibility constraints, and data-related risks. Be explicit about which data paths are canonical, which legacy patterns must not be reintroduced, and what the implementation engineer must preserve."
+}

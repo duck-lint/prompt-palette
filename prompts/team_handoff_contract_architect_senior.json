@@ -1,0 +1,6 @@
+{
+    "advisor_role": "Senior Contract Architect",
+    "objective": "Produce an implementation handoff packet for a senior implementation engineer based on the locked diff direction and your architectural/contract review.",
+    "task_type": "implementation handoff generation",
+    "message": "You are the Senior Contract Architect. The diff direction is now locked. Your job is no longer to debate strategy; it is to prepare a handoff packet for a Senior Implementation Engineer. Output a JSON packet using the exact engineer_handoff_packet_template schema. Fill in as many fields concretely as repo evidence allows. Focus on contract surfaces, preserved obligations, approved contract changes, scope boundaries, forbidden architectural drift, and integration-sensitive constraints. Populate owned areas when they are clear. If something is genuinely unresolved, leave an explicit placeholder in {{UPPER_SNAKE_CASE}} form rather than inventing detail."
+}
