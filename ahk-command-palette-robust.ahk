@@ -261,21 +261,43 @@ FillTemplate(templateText) {
 
     placeholders := ExtractPlaceholders(templateText)
     values := Map()
+    placeholderCount := placeholders.Length
+    index := 1
 
-    for _, key in placeholders {
-        result := ShowThemedInputDialog("Enter value for: " key, "Fill Template")
+    while (index <= placeholderCount) {
+        key := placeholders[index]
+        initialValue := values.Has(key) ? values[key] : ""
+        showBack := (placeholderCount > 1 && index > 1)
+        result := ShowThemedInputDialog(
+            "Enter value for: " key,
+            "Fill Template",
+            initialValue,
+            showBack
+        )
 
-        if (result.Result != "OK") {
-            try PaletteGui.Show()
-            return ""
+        if (result.Result = "OK") {
+            values[key] := result.Value
+            index += 1
+            continue
         }
 
-        values[key] := JsonEscape(result.Value)
+        if (result.Result = "Back") {
+            values[key] := result.Value
+            index -= 1
+            continue
+        }
+
+        try PaletteGui.Show()
+        return ""
     }
 
     try PaletteGui.Show()
 
-    return RenderTemplate(templateText, values)
+    renderedValues := Map()
+    for key, value in values
+        renderedValues[key] := JsonEscape(value)
+
+    return RenderTemplate(templateText, renderedValues)
 }
 
 RenderTemplate(templateText, values) {
@@ -649,7 +671,7 @@ HandlePaletteKeyDown(wParam, lParam, msg, hwnd) {
     }
 }
 
-ShowThemedInputDialog(prompt, title := "Input") {
+ShowThemedInputDialog(prompt, title := "Input", initialValue := "", showBack := false) {
     global GH_BG, GH_INPUT, GH_TEXT, GH_BUTTON, GH_SUCCESS
 
     dialogResult := {Result: "Cancel", Value: ""}
@@ -664,18 +686,35 @@ ShowThemedInputDialog(prompt, title := "Input") {
 
     dlg.SetFont("s10 w400 c" GH_TEXT, "Segoe UI")
     inputCtrl := dlg.AddEdit(
-        "xm y+10 w300 h32 vInputValue Background" GH_INPUT " c" GH_TEXT
+        "xm y+10 w300 h32 vInputValue Background" GH_INPUT " c" GH_TEXT,
+        initialValue
     )
 
     dlg.SetFont("s9 w600", "Segoe UI")
-    okBtn := dlg.AddText(
-        "xm y+12 w112 h30 Center +0x200 Background" GH_SUCCESS " cFFFFFF",
-        "OK"
-    )
-    cancelBtn := dlg.AddText(
-        "x+8 w112 h30 Center +0x200 Background" GH_BUTTON " c" GH_TEXT,
-        "Cancel"
-    )
+    if showBack {
+        okBtn := dlg.AddText(
+            "xm y+12 w92 h30 Center +0x200 Background" GH_SUCCESS " cFFFFFF",
+            "OK"
+        )
+        backBtn := dlg.AddText(
+            "x+8 w92 h30 Center +0x200 Background" GH_BUTTON " c" GH_TEXT,
+            "Back"
+        )
+        cancelBtn := dlg.AddText(
+            "x+8 w92 h30 Center +0x200 Background" GH_BUTTON " c" GH_TEXT,
+            "Cancel"
+        )
+        backBtn.OnEvent("Click", (*) => _BackDialog())
+    } else {
+        okBtn := dlg.AddText(
+            "xm y+12 w112 h30 Center +0x200 Background" GH_SUCCESS " cFFFFFF",
+            "OK"
+        )
+        cancelBtn := dlg.AddText(
+            "x+8 w112 h30 Center +0x200 Background" GH_BUTTON " c" GH_TEXT,
+            "Cancel"
+        )
+    }
 
     okBtn.OnEvent("Click", (*) => _SubmitDialog())
     cancelBtn.OnEvent("Click", (*) => _CancelDialog())
@@ -696,6 +735,12 @@ ShowThemedInputDialog(prompt, title := "Input") {
 
     _SubmitDialog() {
         dialogResult.Result := "OK"
+        dialogResult.Value := inputCtrl.Text
+        dlg.Destroy()
+    }
+
+    _BackDialog() {
+        dialogResult.Result := "Back"
         dialogResult.Value := inputCtrl.Text
         dlg.Destroy()
     }

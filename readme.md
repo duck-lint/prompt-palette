@@ -195,6 +195,10 @@ When a template contains placeholders such as:
 
 the script will prompt you for those values.
 
+When a template has multiple placeholders, later steps include a `Back` button so
+you can revisit and correct earlier entries without restarting the whole flow.
+Previously entered values are preserved when you move backward.
+
 Entered text is automatically escaped to remain valid JSON, including quotes,
 backslashes, tabs, line breaks, form-feed, backspace, and other control
 characters in the JSON control-character range.
@@ -221,7 +225,14 @@ If you change the paste flow, verify these cases manually:
    * while the input dialog is open, switch to app B
    * finish the dialog and confirm the prompt still pastes into app A, not app B
 
-3. **Close the original target before OK**
+3. **Go back during multi-step placeholder entry**
+   * choose a template with at least two placeholders
+   * complete the first placeholder and press `Enter`
+   * on the second placeholder dialog, click `Back`
+   * confirm the first placeholder reopens with the previously entered value prefilled
+   * edit it, continue, and confirm the final rendered prompt uses the corrected values
+
+4. **Close the original target before OK**
    * focus app A and open the palette
    * choose a template with placeholders
    * close app A before pressing `OK` on the final placeholder dialog
