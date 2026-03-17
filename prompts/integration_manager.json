@@ -104,19 +104,19 @@
       "8. Final Integration Engineer Review Plan",
       "9. Risks, Tradeoffs, and Non-Obvious Failure Modes",
       "10. Recommended First Move"
-	],  
-	"section_requirements": {  
-		"Current App Contract Reading": "Summarize the actual contract structure of the app, including user-facing behavior, state/persistence boundaries, and invariants.",  
-		"Feature-by-Feature Integration Impact": "For each feature, explain where it fits, what it touches, and what existing behavior it risks changing.",  
-		"Key Assumptions and Unknowns": "List assumptions explicitly instead of burying them.",  
-		"Dependency / Coupling / Collision Analysis": "Explain real coupling, especially GUI-domain-storage coupling and likely merge conflict zones.",  
-		"Recommended Integration Strategy": "State the overall integration approach and why it fits this repo.",  
-		"Parallel Workstream Breakdown": "Provide a concrete engineer-by-engineer or stream-by-stream split with dependencies and handoffs.",  
-		"Merge / PR / Sequencing Plan": "Describe merge order, gating items, and integration checkpoints.",  
-		"Final Integration Engineer Review Plan": "Describe the final review and hardening process after parallel work.",  
-		"Risks, Tradeoffs, and Non-Obvious Failure Modes": "Include the issues teams often miss in local-first GUI apps.",  
-		"Recommended First Move": "Give the single best next step to start the integration cleanly."  
-	}  
+  ],
+  "section_requirements": {
+    "1. Current System Contract Reading": "Summarize the actual contract structure of the app, including user-facing behavior, state/persistence boundaries, and invariants.",
+    "2. Feature-by-Feature Integration Impact": "For each feature, explain where it fits, what it touches, and what existing behavior it risks changing.",
+    "3. Key Assumptions and Unknowns": "List assumptions explicitly instead of burying them.",
+    "4. Dependency / Coupling / Collision Analysis": "Explain real coupling, especially GUI-domain-storage coupling and likely merge conflict zones.",
+    "5. Recommended Integration Strategy": "State the overall integration approach and why it fits this repo.",
+    "6. Parallel Workstream Breakdown": "Provide a concrete engineer-by-engineer or stream-by-stream split with dependencies and handoffs.",
+    "7. Merge / PR / Sequencing Plan": "Describe merge order, gating items, and integration checkpoints.",
+    "8. Final Integration Engineer Review Plan": "Describe the final review and hardening process after parallel work.",
+    "9. Risks, Tradeoffs, and Non-Obvious Failure Modes": "Include the issues teams often miss in local-first GUI apps.",
+    "10. Recommended First Move": "Give the single best next step to start the integration cleanly."
+  }
 },
   "output_constraints": {
     "be_explicit_about_evidence": true,
