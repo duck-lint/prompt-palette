@@ -30,5 +30,6 @@
     "tone": "direct, serious, engaged",
     "length": "{{null_or_length}}"
   },
-  "message": "{{message}}"
+  "message": "{{message}}",
+  "if_asking_for_JSON_codex_prompt": "{{encoding_UTF8_NO_BOM}}"
 }

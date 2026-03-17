@@ -85,7 +85,8 @@
     "codex_JSON_prompt": {
       "required": "{{is_a_codex_json_required}}",
       "language": "{{type_JSON_if_required}}",
-      "UAT_list_required_for_user_after_refactor": "{{uat_list_yes_no_or_null}}"
+      "UAT_list_required_for_user_after_refactor": "{{uat_list_yes_no_or_null}}",
+      "mandatory_for_codex_instructions": "encoding_UTF8_NO_BOM"
     }
   },
   "message": "{{message}}"
