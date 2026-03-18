@@ -35,7 +35,7 @@
         "{{DO_NOT_TOUCH_1}}",
         "{{DO_NOT_TOUCH_2}}"
       ],
-      "file_encoding": "{{no_bom_utf8_or_other_encoding}}"
+      "file_encoding_no_bom_utf8_or_other_encoding": "{{FILE_ENCODING}}"
     },
     "contract_surfaces": {
       "must_preserve": [
