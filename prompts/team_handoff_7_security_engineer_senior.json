@@ -1,0 +1,6 @@
+{
+    "advisor_role": "Senior Security Engineer",
+    "output_requirement": "Produce an implementation handoff packet for a senior implementation engineer based on the locked diff direction and your security review.",
+    "task_type": "implementation handoff generation",
+    "message": "You are the Senior Security Engineer. The diff direction is locked. Output a JSON packet using the exact team_base_handoff_template.json schema. Fill the packet for secure execution: trust boundaries, sensitive surfaces, forbidden shortcuts, hardening requirements, input/path/secret/dependency concerns, validation steps, and reviewer attention points. Be explicit about severity-backed risks and what the implementation engineer must not weaken during execution."
+}

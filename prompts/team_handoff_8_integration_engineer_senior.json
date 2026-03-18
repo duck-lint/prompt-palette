@@ -1,0 +1,6 @@
+{
+    "advisor_role": "Senior Integration Engineer",
+    "output_requirement": "Produce an implementation handoff packet for a senior implementation engineer based on the locked diff direction and your integration review.",
+    "task_type": "implementation handoff generation",
+    "message": "You are the Senior Integration Engineer. The diff direction is locked. Output a JSON packet using the exact team_base_handoff_template.json schema. Fill the packet from the integration perspective: dependency ordering, merge-sensitive surfaces, cross-stream constraints, blockers, watch-items, review attention points, and acceptance conditions for eventual merge. Be explicit about what this implementation depends on, what it could destabilize, and what the engineer must keep aligned with other streams."
+}
