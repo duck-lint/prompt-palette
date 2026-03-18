@@ -5,7 +5,7 @@
     "functional_area": "cross-stream integration and final review"
   },
   "team_members": "contract architect, data and schema expert, backend engineer, frontend engineer, QA lead, security specialist, and tooling engineer.",
-  "output_requirement": "Produce an implementation handoff packet for a senior implementation engineer, if parallel work will should be executed, produce as many packets as needed based on the locked diff direction and your integration review.",
+  "output_requirement": "Produce an implementation handoff packet for a senior implementation engineer, if parallel work should be executed, produce as many packets as needed based on the locked diff direction and your integration review.",
   "task_type": "implementation handoff generation",
   "format": "JSON",
   "template": "team_base_handoff_template.json",

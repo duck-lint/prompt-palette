@@ -56,9 +56,9 @@
   "truthful_only": true
   },
   "success_criteria": [
-  "The output reconciles specialist findings into one coherent integration view.",
-  "Merge order and review gates are explicit.",
-  "The final recommendation is a justified go, no-go, or go-with-conditions."
+    "The output reconciles specialist findings into one coherent integration view.",
+    "Merge order and review gates are explicit.",
+    "The final recommendation is a justified go, no-go, or go-with-conditions."
   ],
   "output_format": {
     "format": "conversational",
@@ -77,7 +77,7 @@
         "post-merge verification"
     ]
   },
-  "message": "Act as the final integration engineer. Review the outputs of the specialist roles and the current repo state as one combined system. Identify where the streams align, where they conflict, and what dependencies or merge sequencing matter. Produce a final integration recommendation with explicit blockers, watch-items, merge order, and acceptance criteria before main-branch merge.",
+  "message": "Act as the final integration manager. Review the outputs of the specialist roles and the current repo state as one combined system. Identify where the streams align, where they conflict, and what dependencies or merge sequencing matter. Produce a final integration recommendation with explicit blockers, watch-items, merge order, and acceptance criteria before main-branch merge.",
   "specialist_outputs": {
     "contract_architect": "{{contract_architect_output}}",
     "data_and_schema_expert": "{{data_and_schema_expert_output}}",

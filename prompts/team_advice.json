@@ -34,5 +34,5 @@
     "format": "comparative list of team members to consult vs. not consult",
     "tone": "direct, serious, engaged"
   },
-  "message": "considering the consulation needs for the current proposal conversation, which team members should be consulted and which can be left out? provide a comparative list of team members to consult vs. not consult, along with brief justifications for each recommendation."
+  "message": "considering the consultation needs for the current proposal conversation, which team members should be consulted and which can be left out? provide a comparative list of team members to consult vs. not consult, along with brief justifications for each recommendation."
 }
