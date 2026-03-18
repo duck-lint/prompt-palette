@@ -31,5 +31,5 @@
     "length": "{{null_or_length}}"
   },
   "message": "{{message}}",
-  "if_asking_for_JSON_codex_prompt": "{{encoding_UTF8_NO_BOM}}"
+  "if_asking_for_JSON_codex_prompt": "{{encoding_UTF8_NO_BOM_if_asking_for_JSON_codex_prompt}}"
 }
