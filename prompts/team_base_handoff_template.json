@@ -1,5 +1,5 @@
 {
-  "engineer_handoff_packet_template": {
+  "team_base_handoff_template": {
     "handoff_type": "senior_implementation_engineer_assignment",
     "assignment_header": {
       "assignment_id": "{{ASSIGNMENT_ID}}",
