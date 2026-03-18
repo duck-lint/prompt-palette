@@ -34,7 +34,8 @@
       "do_not_touch_without_explicit_escalation": [
         "{{DO_NOT_TOUCH_1}}",
         "{{DO_NOT_TOUCH_2}}"
-      ]
+      ],
+      "file_encoding": "{{no_bom_utf8_or_other_encoding}}"
     },
     "contract_surfaces": {
       "must_preserve": [

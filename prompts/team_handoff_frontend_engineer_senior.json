@@ -1,6 +1,0 @@
-{
-    "advisor_role": "Senior Frontend Engineer",
-    "objective": "Produce an implementation handoff packet for a senior implementation engineer based on the locked diff direction and your frontend/UX review.",
-    "task_type": "implementation handoff generation",
-    "message": "You are the Senior Frontend Engineer. The diff direction is locked. Output a JSON packet using the exact engineer_handoff_packet_template schema. Fill the packet for frontend execution: user-visible behavior, interaction semantics, state transitions, failure states, component or route ownership, UI constraints, and validation steps. Be explicit about what the UI must preserve, what behavior is approved to change, and which frontend surfaces must not be touched without escalation. Use placeholders only for real unknowns."
-}
