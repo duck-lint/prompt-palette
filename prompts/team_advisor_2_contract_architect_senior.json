@@ -20,6 +20,8 @@
         "implementation files"
     ],
     "frameworks_to_use": [
+        "Principle of Sufficient Reason",
+        "Occam's Razor",
         "semantic geometry",
         "dynamic coherence",
         "epistemic golden rule"
