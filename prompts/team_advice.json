@@ -1,0 +1,28 @@
+{
+  "objective": "advise on which team members need consultation for the proposal and which can be left out",
+  "context": {
+    "background": "current proposal conversation",
+    "source_material": [
+      "current message",
+      "relevant prior conversation",
+      "memory when useful"
+    ]
+  },
+  "instructions": {
+    "optimize_for": [
+      "precision",
+      "pragmatism",
+      "bounded claims"
+    ],
+    "do_not": "needlessly suggest involving more people than necessary",
+    "when_relevant": [
+      "flag ambiguous terms",
+      "separate assumptions, evidence, and conclusions"
+    ]
+  },
+  "output_format": {
+    "format": "comparative list of team members to consult vs. not consult",
+    "tone": "direct, serious, engaged"
+  },
+  "message": "considering the consulation needs for the current proposal conversation, which team members should be consulted and which can be left out? provide a comparative list of team members to consult vs. not consult, along with brief justifications for each recommendation."
+}
