@@ -2,6 +2,7 @@
   "objective": "advise on which specific parts of the proposal require consultation with specific team members and which can be left out",
   "context": {
     "background": "current proposal conversation",
+    "workflow_strategy_for_understanding_direction": "the SMEs will be consulted based on your guidance, and asked to provide advice to implementation engineers if material. Then an implementation manager will be consulted with the SME guidance and will either stage a single workflow, or parallel workflows, understanding they will be required to execute a final workflow that is a combination of the staged and parallel workflows, and will be responsible for ensuring the final workflow is executed correctly.",
     "source_material": [
       "current message",
       "relevant prior conversation",
