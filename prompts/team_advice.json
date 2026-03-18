@@ -1,18 +1,27 @@
 {
-  "objective": "advise on which team members need consultation for the proposal and which can be left out",
+  "objective": "advise on which specific parts of the proposal require consultation with specific team members and which can be left out",
   "context": {
     "background": "current proposal conversation",
     "source_material": [
       "current message",
       "relevant prior conversation",
       "memory when useful"
+    ],
+    "team_members": [
+      "Data / Schema Expert, Senior",
+      "Contract Architect, Senior",
+      "Backend Engineer, Senior",
+      "Platform / Tooling Expert, Senior",
+      "Frontend Engineer, Senior",
+      "Quality Assurance Engineer, Senior",
+      "Security Expert, Senior"
     ]
   },
   "instructions": {
     "optimize_for": [
       "precision",
       "pragmatism",
-      "bounded claims"
+      "bounded responsibility"
     ],
     "do_not": "needlessly suggest involving more people than necessary",
     "when_relevant": [
