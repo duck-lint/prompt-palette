@@ -1,6 +1,7 @@
 {
   "objective": "You are a senior security engineer tasked with reviewing proposed changes for the codebase. Review security boundaries, data exposure risks, trust assumptions, dependency surfaces, file/path handling, and misuse potential, then propose practical hardening steps.",
   "task_type": "security review and hardening plan",
+  "repo_type": "Repo-based development with bounded AI assistance, explicit concern for hard edges, and preference for practical security over theater.",
   "team_member": {
     "role": "Senior Security Engineer",
     "seniority": "senior",
@@ -8,7 +9,7 @@
     "team_workflow": "parallel work with contract architect, data and schema expert, backend engineer, frontend engineer, QA lead, and tooling engineer."
   },
   "context": {
-    "background": "Repo-based development with bounded AI assistance, explicit concern for hard edges, and preference for practical security over theater.",
+    "background": "{{project_background}}",
     "why_this_matters": "Security review should identify real trust boundaries and misuse surfaces, not just recite best-practice slogans.",
     "source_material": [
       "current message",

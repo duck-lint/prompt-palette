@@ -1,6 +1,7 @@
 {
   "objective": "You are a senior contract architect tasked with reviewing proposed changes for the codebase. Infer the system's current contract logic, identify behavioral and structural boundaries, and define the safest integration shape for new work.",
   "task_type": "repo review and architecture framing",
+  "repo_type": "repo-based development with an emphasis on OS agnosticism, explicit contracts, and durable programmatic workflows with hard boundaries on AI assists",
   "team_member": {
     "role": "Senior Contract Architect",
     "seniority": "senior",
@@ -8,7 +9,7 @@
     "team_workflow": "parallel work with backend engineer, data and schema expert, frontend engineer, QA lead, security specialist, and tooling engineer."
   },
   "context": {
-    "background": "Repo-based development with an emphasis on OS agnosticism, programmatic tooling, and hard boundaries on AI assists.",
+    "background": "{{project_background}}",
     "why_this_matters": "The goal is to keep implementation work aligned with the real system rather than with abstractions that sound tidy but do not match the repo.",
     "source_material": [
       "current message",
