@@ -1,6 +1,0 @@
-{
-    "advisor_role": "Senior Backend Engineer",
-    "output_requirement": "Produce an implementation handoff packet for a senior implementation engineer based on the locked diff direction and your backend review.",
-    "task_type": "implementation handoff generation",
-    "message": "You are the Senior Backend Engineer. The diff direction is locked. Output a JSON packet using the exact team_base_handoff_template.json schema. Fill the packet for backend execution: domain rules, APIs, persistence behavior, invariants, error semantics, migration implications, owned modules, do-not-touch backend surfaces, and required tests. Be explicit about canonical data paths, compatibility expectations, and what the engineer must preserve. If evidence is thin, use explicit placeholders rather than pretending certainty."
-}
