@@ -1,0 +1,391 @@
+{
+  "repository_summary": {
+    "name": "prompt-palette",
+    "description": "A single-file AutoHotkey v2 desktop tool that provides a command-palette interface for selecting, filling, validating, and pasting structured JSON prompt templates. Ships with a curated prompt library covering general-purpose prompting, role-based specialist review, team consultation routing, and implementation handoff packet generation.",
+    "primary_language": "AutoHotkey v2",
+    "scope": "Local-first desktop utility with no external dependencies beyond AutoHotkey v2 on Windows. File-based template system, no API calls, no services.",
+    "artifact_types": [
+      "AutoHotkey v2 script (~829 lines)",
+      "16 JSON prompt templates",
+      "README documentation",
+      "Screenshot"
+    ],
+    "notable_design_choices": [
+      "Single-file architecture with no build system, package manager, or CI",
+      "File-based template discovery with no registration step",
+      "Defensive clipboard and paste behavior with fail-closed semantics",
+      "Hand-rolled JSON validator instead of relying on external libraries",
+      "DWM window chrome customization for visual polish on Windows 11",
+      "Structured prompt templates with explicit constraint and success-criteria sections"
+    ]
+  },
+  "atomic_skills": [
+    {
+      "id": "ahk-v2-gui-construction",
+      "skill": "Building custom GUI windows with styled controls in AutoHotkey v2",
+      "evidence": "ShowPromptPalette() constructs a Gui with styled Edit, ListBox, and Text controls using font, color, margin, and layout parameters. ShowThemedInputDialog() builds a second styled dialog with conditional Back button layout.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:65-127", "ahk-command-palette-robust.ahk:674-768"],
+      "evidence_strength": "strong",
+      "transferability": "AutoHotkey-specific, but demonstrates general desktop GUI construction patterns"
+    },
+    {
+      "id": "command-palette-interaction-pattern",
+      "skill": "Implementing a command-palette UX pattern with search-filter and keyboard navigation",
+      "evidence": "The palette opens on hotkey, filters a list by substring as the user types (OnSearchChange → RefreshTemplateList), supports Up/Down arrow selection while keeping focus in the search box, and accepts Enter or double-click to activate. This mirrors VS Code / Sublime Text command-palette interaction.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:33-127", "ahk-command-palette-robust.ahk:156-217", "ahk-command-palette-robust.ahk:640-672"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable interaction design pattern"
+    },
+    {
+      "id": "wm-keydown-message-interception",
+      "skill": "Intercepting and routing Windows messages (WM_KEYDOWN) for custom keyboard handling in GUI controls",
+      "evidence": "OnMessage(0x100, HandlePaletteKeyDown) registers a global WM_KEYDOWN handler that filters by PaletteHwnd via DllCall('GetAncestor', ..., GA_ROOT) before dispatching VK_UP, VK_DOWN, VK_RETURN. A second handler is registered/unregistered for the input dialog.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:30", "ahk-command-palette-robust.ahk:640-672", "ahk-command-palette-robust.ahk:725-733", "ahk-command-palette-robust.ahk:754-767"],
+      "evidence_strength": "strong",
+      "transferability": "Windows desktop development; demonstrates understanding of Win32 message pump patterns"
+    },
+    {
+      "id": "template-placeholder-extraction-substitution",
+      "skill": "Designing and implementing a regex-based template placeholder system with extraction, deduplication, and substitution",
+      "evidence": "ExtractPlaceholders() uses regex \\{\\{([A-Za-z0-9_\\-]+)\\}\\} to find unique placeholders in first-appearance order. RenderTemplate() substitutes values by walking the template with the same regex. Repeated placeholders are prompted once and reused everywhere.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:303-337"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable; template engine fundamentals applicable in any language"
+    },
+    {
+      "id": "multi-step-wizard-with-back-navigation",
+      "skill": "Implementing a multi-step dialog wizard with forward/back navigation and value preservation",
+      "evidence": "FillTemplate() iterates through placeholders with an index-based while loop. ShowThemedInputDialog() returns a result object with 'OK', 'Back', or 'Cancel'. On Back, the index decrements and the prior value is passed as initialValue. Values are preserved in a Map across steps.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:256-300"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable wizard/stepper pattern"
+    },
+    {
+      "id": "json-string-escaping",
+      "skill": "Implementing correct JSON string escaping including control characters, unicode escapes, and CR/LF normalization",
+      "evidence": "JsonEscape() manually iterates characters, handles CR+LF → \\n, LF → \\n, backslash, double-quote, backspace, tab, formfeed, and falls back to \\uXXXX for remaining control characters below 0x20.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:339-378"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable; understanding of JSON spec escaping rules"
+    },
+    {
+      "id": "hand-rolled-recursive-descent-json-validator",
+      "skill": "Writing a recursive-descent JSON parser/validator with positional error reporting",
+      "evidence": "ValidateRenderedJson() dispatches to JsonParseObject, JsonParseArray, JsonParseString, JsonParseNumber, JsonParseLiteral. Each tracks position via a state object. JsonThrowError() computes line/column from the position and includes a 40-char excerpt. Handles all JSON value types, escape sequences including \\uXXXX, and number format per spec.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:380-598"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable; demonstrates parser construction, state machine design, and error reporting"
+    },
+    {
+      "id": "clipboard-safety-and-restoration",
+      "skill": "Implementing defensive clipboard save/restore with try/finally semantics",
+      "evidence": "PasteText() saves ClipboardAll() before overwriting, uses ClipWait, and restores the original clipboard in a finally block covering all exit paths including failure.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:600-638"],
+      "evidence_strength": "strong",
+      "transferability": "Windows clipboard management; demonstrates resource-safety and cleanup patterns"
+    },
+    {
+      "id": "paste-target-window-validation",
+      "skill": "Implementing fail-closed paste safety by verifying the original target window still exists and can be reactivated",
+      "evidence": "PasteText() checks WinExist for the target HWND, attempts WinActivate + WinWaitActive, then verifies via WinGetID that the correct window is actually active before sending Ctrl+V. Any failure cancels the paste with a user-visible message.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:600-638"],
+      "evidence_strength": "strong",
+      "transferability": "demonstrates fail-closed safety design; transferable defensive-programming pattern"
+    },
+    {
+      "id": "invoking-window-capture-and-tracking",
+      "skill": "Capturing and tracking the invoking window HWND across palette lifecycle including edge cases",
+      "evidence": "ShowPromptPalette() captures WinGetID('A') in a try/catch, handles the case where the palette itself is the active window by falling back to the previously stored InvokingWindowHwnd, and stores the HWND as a global for later paste targeting.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:51-63"],
+      "evidence_strength": "strong",
+      "transferability": "Windows HWND management; transferable window-tracking pattern"
+    },
+    {
+      "id": "dwm-window-attribute-customization",
+      "skill": "Calling DWM APIs via DllCall to customize window chrome (dark mode, border color, caption color, corner preference, backdrop type)",
+      "evidence": "ApplyGitHubWindowChrome() calls DwmSetWindowAttribute for six different attributes (IMMERSIVE_DARK_MODE, WINDOW_CORNER_PREFERENCE, BORDER_COLOR, CAPTION_COLOR, TEXT_COLOR, SYSTEMBACKDROP_TYPE). SetDwmWindowAttribute() wraps the DllCall with proper buffer management. ColorRef() converts RGB hex to COLORREF (0x00BBGGRR) format.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:770-828"],
+      "evidence_strength": "strong",
+      "transferability": "Windows desktop development; Win32/DWM API interop"
+    },
+    {
+      "id": "color-format-conversion",
+      "skill": "Converting RGB hex strings to Win32 COLORREF (BGR) byte order",
+      "evidence": "ColorRef() parses a hex RGB string, extracts R/G/B components via bitshift, and reassembles them in 0x00BBGGRR order required by Windows APIs.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:818-828"],
+      "evidence_strength": "strong",
+      "transferability": "Windows API color handling"
+    },
+    {
+      "id": "file-based-template-discovery",
+      "skill": "Implementing dynamic file-based resource discovery with no registration step",
+      "evidence": "LoadPromptFiles() uses Loop Files to scan the prompts directory for *.json files and builds parallel arrays of paths and display names. The palette reloads the folder each time it opens, so adding a new template requires no code change.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:144-154"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable plugin/template discovery pattern"
+    },
+    {
+      "id": "structured-prompt-template-design",
+      "skill": "Designing structured JSON prompt templates with explicit objective, context, constraints, instructions, success criteria, and output format sections",
+      "evidence": "All 16 JSON templates follow a consistent schema with fields like objective, context.background, context.source_material, instructions.optimize_for, instructions.do_not, instructions.when_relevant, constraints, success_criteria, and output_format. This is a deliberate prompt engineering structure, not ad hoc.",
+      "evidence_files": ["prompts/reg_quick_default.json", "prompts/reg_code.json", "prompts/reg_discussion_default.json"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable prompt engineering and schema design"
+    },
+    {
+      "id": "role-based-prompt-specialization",
+      "skill": "Designing role-specific prompt templates with scoped review mandates, domain-appropriate constraints, and team workflow context",
+      "evidence": "Eight team_advisor templates each define a specific senior role (data/schema, contract architect, backend, tooling/platform, frontend, QA, security, integration manager) with tailored objectives, review mandates, do_not lists, and success criteria appropriate to the role's domain.",
+      "evidence_files": ["prompts/team_advisor_1_data_schema_senior.json", "prompts/team_advisor_2_contract_architect_senior.json", "prompts/team_advisor_7_security_senior.json"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable prompt engineering and team-simulation design"
+    },
+    {
+      "id": "handoff-packet-schema-design",
+      "skill": "Defining a structured handoff packet schema for implementation assignment with scope, repo targets, contract surfaces, advisor guidance, and validation sections",
+      "evidence": "team_base_handoff_template.json defines a detailed schema with assignment_header, scope (in_scope, out_of_scope, non_goals), repo_targets (owned files, do_not_touch), contract_surfaces (must_preserve, approved_changes), advisor_guidance (required shape, forbidden shortcuts, known risks, open questions), and validation (tests, manual checks, acceptance criteria).",
+      "evidence_files": ["prompts/team_base_handoff_template.json"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable; implementation handoff and work-package design"
+    },
+    {
+      "id": "team-consultation-routing-design",
+      "skill": "Designing a team consultation routing prompt that determines which specialist roles to include or exclude for a given proposal",
+      "evidence": "team_advice.json defines a prompt that lists available team members and asks for a comparative list of who to consult vs. not consult, with justifications. Includes workflow_strategy_for_understanding_direction describing the downstream SME → integration manager pipeline.",
+      "evidence_files": ["prompts/team_advice.json"],
+      "evidence_strength": "strong",
+      "transferability": "transferable to workflow orchestration and team coordination design"
+    },
+    {
+      "id": "defensive-error-handling-with-try-catch",
+      "skill": "Wrapping potentially failing Windows API calls in try/catch to degrade gracefully",
+      "evidence": "WinGetID('A') is wrapped in try/catch in ShowPromptPalette() and HandlePaletteKeyDown(). DWM attribute calls are each wrapped in try. PaletteGui.Destroy() is wrapped in try. The pattern is consistent throughout: fail gracefully rather than crash.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:51-56", "ahk-command-palette-robust.ahk:132-134", "ahk-command-palette-robust.ahk:648-650", "ahk-command-palette-robust.ahk:796-801"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable defensive programming pattern"
+    },
+    {
+      "id": "global-state-lifecycle-management",
+      "skill": "Managing global GUI state with explicit initialization and cleanup across open/close lifecycle",
+      "evidence": "ShowPromptPalette() checks if PaletteGui already exists and closes it before opening. ClosePalette() destroys the GUI and resets all global state variables (PaletteGui, PaletteHwnd, InvokingWindowHwnd, SearchEdit, TemplateList, FilteredNames) to zero/empty. All functions guard against stale state with IsObject checks.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:9-14", "ahk-command-palette-robust.ahk:60-62", "ahk-command-palette-robust.ahk:129-142"],
+      "evidence_strength": "strong",
+      "transferability": "transferable state management and resource cleanup pattern"
+    },
+    {
+      "id": "substring-filter-with-immediate-feedback",
+      "skill": "Implementing live substring filtering of a list with automatic first-item selection",
+      "evidence": "RefreshTemplateList() clears and rebuilds the ListBox on every keystroke. Filter is case-insensitive via StrLower + InStr. The first matching item is auto-selected via Choose(1).",
+      "evidence_files": ["ahk-command-palette-robust.ahk:156-178"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable search/filter UX pattern"
+    },
+    {
+      "id": "naming-convention-as-ux-taxonomy",
+      "skill": "Using filename naming conventions as a user-facing taxonomy for template discovery",
+      "evidence": "Templates use prefixes (reg_, team_advisor_, team_handoff_, team_) as grouping conventions. The README explicitly documents this as a UX decision: 'Because search is simple substring matching against the filename stem, template names are part of the UX.'",
+      "evidence_files": ["readme.md:160-170", "prompts/"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable convention-over-configuration design"
+    },
+    {
+      "id": "explicit-scope-and-limits-documentation",
+      "skill": "Documenting explicit scope boundaries, current limits, and what is intentionally not included",
+      "evidence": "README includes a 'Current limits' section listing substring-only search, file-based only templates, no preview pane, no metadata system, no favorites. States 'That is a feature, not a bug.' Also includes manual regression checks as a substitute for automated tests.",
+      "evidence_files": ["readme.md:219-231", "readme.md:209-218"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable documentation practice"
+    },
+    {
+      "id": "manual-regression-checklist-design",
+      "skill": "Defining a structured manual regression checklist covering key behavioral contracts",
+      "evidence": "README section 'Manual regression checks' lists 5 specific scenarios: same-window paste, focus-switch during entry, Back navigation value preservation, target-window-closed cancellation, and broken-template JSON validation blocking.",
+      "evidence_files": ["readme.md:209-218"],
+      "evidence_strength": "moderate",
+      "transferability": "transferable QA practice; stronger claim would require evidence of execution"
+    },
+    {
+      "id": "themed-ui-color-system",
+      "skill": "Defining a cohesive color system with named semantic color roles for GUI theming",
+      "evidence": "Eight named color globals (GH_BG, GH_PANEL, GH_INPUT, GH_BUTTON, GH_BORDER, GH_TEXT, GH_MUTED, GH_SUCCESS) are defined with documented semantic roles and applied consistently across the palette, input dialogs, and DWM chrome. Comments explain what DWM attributes actually control vs. what they don't.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:15-27"],
+      "evidence_strength": "strong",
+      "transferability": "transferable design-system thinking; semantic color tokens"
+    },
+    {
+      "id": "message-handler-registration-lifecycle",
+      "skill": "Managing message handler registration and unregistration to avoid handler conflicts between GUI states",
+      "evidence": "The input dialog registers its own WM_KEYDOWN handler with priority (OnMessage 0x100, handler, 1), unregisters it after dialog close (OnMessage 0x100, handler, 0), and then explicitly restores the palette handler (OnMessage 0x100, HandlePaletteKeyDown).",
+      "evidence_files": ["ahk-command-palette-robust.ahk:725-733"],
+      "evidence_strength": "strong",
+      "transferability": "event handler lifecycle management; transferable to any event-driven system"
+    },
+    {
+      "id": "constraint-driven-prompt-engineering",
+      "skill": "Encoding explicit behavioral constraints (do_not, optimize_for, when_relevant) and success criteria in prompt templates",
+      "evidence": "Every prompt template includes instructions.do_not (anti-patterns), instructions.optimize_for (priorities), instructions.when_relevant (conditional guidance), constraints (flags), and success_criteria (verifiable outcomes). These are structurally consistent across templates but domain-tailored per role or task type.",
+      "evidence_files": ["prompts/reg_code.json", "prompts/reg_discussion_default.json", "prompts/reg_philosophy.json", "prompts/team_advisor_1_data_schema_senior.json"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable prompt engineering and behavioral specification"
+    },
+    {
+      "id": "json-validation-before-paste",
+      "skill": "Enforcing output validation as a gate before committing an irreversible action (paste)",
+      "evidence": "ActivateSelectedTemplate() calls ValidateRenderedJson() after template rendering and before PasteText(). Invalid JSON is blocked with an error message showing the parse error. This is a validation-gate pattern preventing malformed output from reaching the target application.",
+      "evidence_files": ["ahk-command-palette-robust.ahk:243-247"],
+      "evidence_strength": "strong",
+      "transferability": "broadly transferable validation-gate and fail-safe design"
+    }
+  ],
+  "skill_clusters": [
+    {
+      "cluster": "Desktop GUI and Windows API Integration",
+      "skills": [
+        "ahk-v2-gui-construction",
+        "wm-keydown-message-interception",
+        "dwm-window-attribute-customization",
+        "color-format-conversion",
+        "invoking-window-capture-and-tracking",
+        "themed-ui-color-system"
+      ]
+    },
+    {
+      "cluster": "Template Engine Design",
+      "skills": [
+        "template-placeholder-extraction-substitution",
+        "multi-step-wizard-with-back-navigation",
+        "json-string-escaping",
+        "file-based-template-discovery"
+      ]
+    },
+    {
+      "cluster": "Defensive Programming and Safety",
+      "skills": [
+        "clipboard-safety-and-restoration",
+        "paste-target-window-validation",
+        "defensive-error-handling-with-try-catch",
+        "global-state-lifecycle-management",
+        "json-validation-before-paste",
+        "message-handler-registration-lifecycle"
+      ]
+    },
+    {
+      "cluster": "Prompt Engineering and Schema Design",
+      "skills": [
+        "structured-prompt-template-design",
+        "role-based-prompt-specialization",
+        "handoff-packet-schema-design",
+        "team-consultation-routing-design",
+        "constraint-driven-prompt-engineering"
+      ]
+    },
+    {
+      "cluster": "UX and Interaction Design",
+      "skills": [
+        "command-palette-interaction-pattern",
+        "substring-filter-with-immediate-feedback",
+        "naming-convention-as-ux-taxonomy"
+      ]
+    },
+    {
+      "cluster": "Parser Construction",
+      "skills": [
+        "hand-rolled-recursive-descent-json-validator"
+      ]
+    },
+    {
+      "cluster": "Documentation Practice",
+      "skills": [
+        "explicit-scope-and-limits-documentation",
+        "manual-regression-checklist-design"
+      ]
+    }
+  ],
+  "evidence_basis": {
+    "primary_artifacts": [
+      {
+        "file": "ahk-command-palette-robust.ahk",
+        "type": "AutoHotkey v2 script",
+        "lines": 829,
+        "role": "Entire application logic: GUI, templating, validation, clipboard management, theming"
+      },
+      {
+        "file": "prompts/*.json",
+        "type": "JSON template files",
+        "count": 16,
+        "role": "Structured prompt templates demonstrating prompt engineering and schema design"
+      },
+      {
+        "file": "readme.md",
+        "type": "documentation",
+        "lines": 231,
+        "role": "Describes behavior, design decisions, scope limits, regression checks, and naming conventions"
+      }
+    ],
+    "absent_artifacts": [
+      "No automated tests",
+      "No CI/CD configuration",
+      "No build system or package manager",
+      "No linting or formatting tooling",
+      "No version pinning or dependency management"
+    ]
+  },
+  "ambiguities_or_borderline_calls": [
+    {
+      "item": "JSON parser correctness claim",
+      "note": "The hand-rolled JSON validator appears to handle all JSON value types and escape sequences per the spec, but without automated tests, corner-case correctness is asserted by code inspection only. The skill claim is for 'writing a recursive-descent validator,' not 'provably correct JSON parsing.'",
+      "resolution": "included with strong evidence; the code is inspectable and handles objects, arrays, strings with escapes, numbers with exponents, and literals"
+    },
+    {
+      "item": "Manual regression checklist as QA evidence",
+      "note": "The README lists 5 manual regression checks. There is no evidence these have been executed or that they catch regressions reliably. The skill claim is for 'designing a regression checklist,' not 'maintaining a test suite.'",
+      "resolution": "included at moderate evidence strength"
+    },
+    {
+      "item": "Prompt engineering depth",
+      "note": "The prompt templates are structurally sophisticated (explicit constraints, success criteria, role scoping), but whether they produce measurably better LLM outputs is not verifiable from the repository. The skill claim is for template design, not for validated prompt performance.",
+      "resolution": "included; the design discipline is the evidence, not outcome measurement"
+    },
+    {
+      "item": "Sleep(300) heuristic for clipboard timing",
+      "note": "PasteText uses a 300ms sleep before restoring the clipboard. The comment acknowledges this is a heuristic and notes a timer-based approach would be more robust. This is honest about a known limitation but not a skill claim.",
+      "resolution": "not extracted as a separate skill; contributes to clipboard-safety-and-restoration evidence"
+    },
+    {
+      "item": "Single-file architecture as a skill vs. limitation",
+      "note": "The entire application is one script file. This could be read as intentional simplicity or as absence of modular design. The README frames it as deliberate scope management.",
+      "resolution": "not claimed as a separate skill; noted as a design choice in repository_summary"
+    }
+  ],
+  "overclaim_risks": [
+    {
+      "risk": "Treating AutoHotkey scripting as evidence of general systems programming",
+      "mitigation": "Skills are stated in terms of patterns (recursive-descent parsing, message interception, fail-closed safety) rather than language-general systems programming claims"
+    },
+    {
+      "risk": "Treating prompt template presence as evidence of prompt engineering mastery",
+      "mitigation": "Skills are scoped to 'designing structured templates with X properties,' not 'expert prompt engineering.' No outcome data is available."
+    },
+    {
+      "risk": "Treating DWM API calls as deep Windows internals expertise",
+      "mitigation": "Skill is stated as 'calling DWM APIs via DllCall for window chrome customization,' not 'Windows kernel development'"
+    }
+  ],
+  "transferable_signal_notes": [
+    "Recursive-descent JSON parsing demonstrates parser construction fundamentals transferable to any language or domain",
+    "Fail-closed paste safety demonstrates defensive design thinking applicable to any system with irreversible actions",
+    "Template placeholder extraction/substitution is a micro-template-engine; the pattern recurs in config management, code generation, and mail merge",
+    "Multi-step wizard with back navigation and value preservation is a standard UX pattern with broad applicability",
+    "Structured prompt templates with explicit constraints and success criteria map directly to requirements engineering and specification writing",
+    "Role-based specialization of prompt templates parallels service-oriented architecture: scoped responsibilities, bounded mandates, explicit interfaces",
+    "The handoff packet schema demonstrates work-package structuring applicable to project management and engineering handoff workflows"
+  ],
+  "dedupe_notes_for_cross_repo_merge": [
+    "json-string-escaping and hand-rolled-recursive-descent-json-validator may recur if other repos also implement JSON handling from scratch",
+    "structured-prompt-template-design and constraint-driven-prompt-engineering may overlap with skills extracted from repos that consume these templates",
+    "clipboard-safety-and-restoration is Windows-specific; cross-repo merge should distinguish platform-specific from platform-agnostic safety patterns",
+    "file-based-template-discovery may overlap with similar plugin-discovery patterns in CLI tools or other projects",
+    "defensive-error-handling-with-try-catch is likely to appear in every repo; consider merging under a single 'defensive error handling' skill with repo-specific evidence links"
+  ],
+  "main_takeaway": "This repository demonstrates a concentrated set of implementation skills around desktop GUI construction, template-engine design, recursive-descent parsing, defensive programming with fail-closed semantics, and structured prompt engineering. The strongest signals are in the hand-rolled JSON validator (parser construction), the clipboard/paste safety design (fail-closed defensive programming), and the structured prompt template library (schema-driven prompt engineering with explicit constraints). The single-file, zero-dependency architecture limits evidence of modular design or build-system skills but strengthens evidence of deliberate scope management and local-first tooling philosophy."
+}
